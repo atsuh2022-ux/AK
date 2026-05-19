@@ -1,11 +1,12 @@
 """
 visualize3.py  ─  指定16項目の縦棒グラフ（4×4グリッド）
-凡例・ラベルは legends.xlsx から読み込みます。
+凡例・ラベル・食事摂取基準値は legends.xlsx から読み込みます。
 """
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 import numpy as np
 import openpyxl
 from matplotlib import font_manager
@@ -44,6 +45,79 @@ for row in ws_l2.iter_rows(min_row=2, values_only=True):
     if row[0]:
         L2[str(row[0])] = row[1]
 
+# ── 食事摂取基準 読み込み ────────────────────────────────────
+# col: キー, 単位, 種別, m18, m30, f18, f30, lbl_m, lbl_f
+ws_dri = wb["食事摂取基準"]
+DRI = {}  # key -> {m18, m30, f18, f30, type, lbl_m, lbl_f}
+for row in ws_dri.iter_rows(min_row=3, values_only=True):
+    if row[0] and str(row[0]).startswith("※") is False:
+        DRI[str(row[0])] = {
+            "m18": row[3], "m30": row[4],
+            "f18": row[5], "f30": row[6],
+            "type": row[2] or "",
+            "lbl_m": row[7] or "",
+            "lbl_f": row[8] or "",
+        }
+
+# DRI参照線を描画するヘルパー
+# 男性ゾーン: x = -0.5〜4.4, 女性ゾーン: x = 4.6〜8.5
+CDRI_M = '#1A7A4A'   # 男性DRI: 深緑
+CDRI_F = '#9B2D6F'   # 女性DRI: 深紫
+CDRI_M30 = '#5CB87A' # 男性DRI 30-49y: 薄緑
+
+def draw_dri(ax, dri_key, legend_handles):
+    """DRIシートから値を読み、対応する参照線を描く。"""
+    if dri_key not in DRI:
+        return
+    d = DRI[dri_key]
+    m18, m30 = d["m18"], d["m30"]
+    f18,  _  = d["f18"], d["f30"]
+    lbl_m, lbl_f = d["lbl_m"], d["lbl_f"]
+
+    drawn = []
+
+    # 男性 18-29y 参照線
+    if m18 is not None:
+        ax.hlines(m18, -0.5, 4.4, colors=CDRI_M, lw=2.0, ls='-', zorder=4)
+        ax.annotate(f'{m18}', xy=(4.4, m18), xytext=(3, 2),
+                    textcoords='offset points', fontsize=6.5,
+                    color=CDRI_M, fontproperties=fp, fontweight='bold')
+        if lbl_m and lbl_m not in [h.get_label() for h in legend_handles]:
+            legend_handles.append(
+                mlines.Line2D([], [], color=CDRI_M, lw=2, ls='-',
+                              label=lbl_m))
+
+    # 男性 30-49y 参照線（18-29yと異なる場合のみ）
+    if m30 is not None and m30 != m18:
+        ax.hlines(m30, -0.5, 4.4, colors=CDRI_M30, lw=2.0, ls='--', zorder=4)
+        ax.annotate(f'{m30}', xy=(4.4, m30), xytext=(3, -8),
+                    textcoords='offset points', fontsize=6.5,
+                    color=CDRI_M30, fontproperties=fp, fontweight='bold')
+        lbl_m30 = lbl_m.replace('(男)', '(男30-49)') if lbl_m else '男30-49推奨量'
+        if lbl_m30 not in [h.get_label() for h in legend_handles]:
+            legend_handles.append(
+                mlines.Line2D([], [], color=CDRI_M30, lw=2, ls='--',
+                              label=lbl_m30))
+
+    # 女性 18-29y 参照線
+    if f18 is not None:
+        ax.hlines(f18, 4.6, 8.5, colors=CDRI_F, lw=2.0, ls='-', zorder=4)
+        ax.annotate(f'{f18}', xy=(4.6, f18), xytext=(3, 2),
+                    textcoords='offset points', fontsize=6.5,
+                    color=CDRI_F, fontproperties=fp, fontweight='bold')
+        if lbl_f and lbl_f not in [h.get_label() for h in legend_handles]:
+            legend_handles.append(
+                mlines.Line2D([], [], color=CDRI_F, lw=2, ls='-',
+                              label=lbl_f))
+
+
+# PFC DRI範囲（目標量）
+PFC_DRI = {
+    'P': (13, 20),   # %E
+    'F': (20, 30),
+    'C': (50, 65),
+}
+
 # ── データ ──────────────────────────────────────────────────
 energy     = {'m':[2414,2102,2189,2223,2407], 'f':[1776,1737,1686,1711]}
 energy_kg  = {'m':[42,32,32,39,39],           'f':[39,35,28,32]}
@@ -64,43 +138,45 @@ vitB2_raw  = {'m':[2,2,2,2,2],                 'f':[1,2,1,1]}
 vitB6      = {'m':[2.2,1.6,1.9,1.8,2.3],      'f':[1.9,1.6,1.3,1.5]}
 vitC       = {'m':[142.5,108.3,170.5,129.0,148.3],'f':[185.3,141.6,119.5,129.1]}
 
-# ── 各パネルの定義 ──────────────────────────────────────────
-# (データ辞書, タイトル, Y軸ラベル, 参照値, 参照ラベル, パネル種別)
-# 種別: 'bar' or 'pfc'
+# (データ, タイトル, Y軸ラベル, DRIキー, 種別)
 panels = [
-    (energy,     NL.get("エネルギー",    "エネルギー"),       "kcal/日",    None,  None,           "bar"),
-    (energy_kg,  NL.get("エネルギー_kg", "エネルギー/kg BW"), "kcal/kg BW", None,  None,           "bar"),
-    (protein,    NL.get("たんぱく質",    "たんぱく質"),       "g/日",       None,  None,           "bar"),
-    (protein_kg, "たんぱく質/kg BW",                          "g/kg BW",    None,  None,           "bar"),
-    (carb,       NL.get("炭水化物",      "炭水化物"),         "g/日",       None,  None,           "bar"),
-    (carb_kg,    NL.get("炭水化物_kg",   "炭水化物/kg BW"),   "g/kg BW",    None,  None,           "bar"),
-    (None,       "PFC エネルギー比率",                         "%E",         None,  None,           "pfc"),
-    (fiber,      NL.get("食物繊維総量",  "食物繊維総量"),     "g/日",       18.0,  "目安量 18g",   "bar"),
-    (salt,       NL.get("食塩相当量",    "食塩相当量"),       "g/日",       8.0,   "WHO目標 8g",   "bar"),
-    (calcium,    NL.get("カルシウム",    "カルシウム"),       "mg/日",      None,  None,           "bar"),
-    (iron,       NL.get("鉄",           "鉄"),               "mg/日",      None,  None,           "bar"),
-    (vitD,       NL.get("ビタミンD",    "ビタミンD"),        "µg/日",      None,  None,           "bar"),
-    (vitB1,      NL.get("ビタミンB1",   "ビタミンB1"),       "mg/日",      None,  None,           "bar"),
-    (vitB2_raw,  NL.get("ビタミンB2",   "ビタミンB2 (概算)"),"mg/日",      None,  None,           "bar"),
-    (vitB6,      NL.get("ビタミンB6",   "ビタミンB6"),       "mg/日",      None,  None,           "bar"),
-    (vitC,       NL.get("ビタミンC",    "ビタミンC"),        "mg/日",      100.0, "推奨量 100mg", "bar"),
+    (energy,     NL.get("エネルギー",    "エネルギー"),       "kcal/日",   "エネルギー",       "bar"),
+    (energy_kg,  NL.get("エネルギー_kg", "エネルギー/kg BW"), "kcal/kg BW","エネルギー_kg",    "bar"),
+    (protein,    NL.get("たんぱく質",    "たんぱく質"),       "g/日",      "たんぱく質",       "bar"),
+    (protein_kg, "たんぱく質/kg BW",                          "g/kg BW",   "たんぱく質/kg BW", "bar"),
+    (carb,       NL.get("炭水化物",      "炭水化物"),         "g/日",      "炭水化物",         "bar"),
+    (carb_kg,    NL.get("炭水化物_kg",   "炭水化物/kg BW"),   "g/kg BW",   "炭水化物_kg",      "bar"),
+    (None,       "PFC エネルギー比率",                         "%E",        "PFC",              "pfc"),
+    (fiber,      NL.get("食物繊維総量",  "食物繊維総量"),     "g/日",      "食物繊維総量",     "bar"),
+    (salt,       NL.get("食塩相当量",    "食塩相当量"),       "g/日",      "食塩相当量",       "bar"),
+    (calcium,    NL.get("カルシウム",    "カルシウム"),       "mg/日",     "カルシウム",       "bar"),
+    (iron,       NL.get("鉄",           "鉄"),               "mg/日",     "鉄",               "bar"),
+    (vitD,       NL.get("ビタミンD",    "ビタミンD"),        "µg/日",     "ビタミンD",        "bar"),
+    (vitB1,      NL.get("ビタミンB1",   "ビタミンB1"),       "mg/日",     "ビタミンB1",       "bar"),
+    (vitB2_raw,  NL.get("ビタミンB2",   "ビタミンB2"),       "mg/日",     "ビタミンB2",       "bar"),
+    (vitB6,      NL.get("ビタミンB6",   "ビタミンB6"),       "mg/日",     "ビタミンB6",       "bar"),
+    (vitC,       NL.get("ビタミンC",    "ビタミンC"),        "mg/日",     "ビタミンC",        "bar"),
 ]
 
 # ── 描画 ─────────────────────────────────────────────────────
-fig, axes = plt.subplots(4, 4, figsize=(20, 20))
-fig.suptitle("栄養素摂取量 グループ別比較（縦棒グラフ）",
-             fontproperties=fp, fontsize=18, fontweight='bold', y=0.995)
+fig, axes = plt.subplots(4, 4, figsize=(22, 22))
+fig.suptitle("栄養素摂取量 グループ別比較（縦棒グラフ）\n"
+             "━━ 食事摂取基準2020年版の推奨量・目安量・目標量を併記 ━━",
+             fontproperties=fp, fontsize=17, fontweight='bold', y=0.998)
 
 x = np.arange(9)
 xtick_labels = [parts_info[p]["label"] for p in all_parts]
-
 avg_lbl_m = L2.get("avg_male_label", "男平均")
 avg_lbl_f = L2.get("avg_female_label", "女平均")
 
-for ax, (dat, title, ylabel, ref, ref_lbl, kind) in zip(axes.flat, panels):
+# 全体共通DRI凡例ハンドル（重複排除）
+global_dri_handles = []
+
+for ax, (dat, title, ylabel, dri_key, kind) in zip(axes.flat, panels):
+
+    panel_dri_handles = []
 
     if kind == "pfc":
-        # ── PFC 積み上げ棒グラフ ──
         p_vals = prot_pct['m'] + prot_pct['f']
         f_vals = fat_pct['m']  + fat_pct['f']
         c_vals = carb_pct['m'] + carb_pct['f']
@@ -111,23 +187,38 @@ for ax, (dat, title, ylabel, ref, ref_lbl, kind) in zip(axes.flat, panels):
         ax.bar(x, c_vals, bottom=[p+f for p,f in zip(p_vals,f_vals)],
                color='#3498DB', label=L2.get("label_carb", "炭水化物"), zorder=3)
         for i, (p, f, c) in enumerate(zip(p_vals, f_vals, c_vals)):
-            ax.text(i, p/2,     f'{p:.0f}', ha='center', va='center', fontsize=6.5,
+            ax.text(i, p/2,     f'{p:.0f}', ha='center', va='center', fontsize=6,
                     color='white', fontweight='bold')
-            ax.text(i, p+f/2,   f'{f:.0f}', ha='center', va='center', fontsize=6.5,
+            ax.text(i, p+f/2,   f'{f:.0f}', ha='center', va='center', fontsize=6,
                     color='white', fontweight='bold')
-            ax.text(i, p+f+c/2, f'{c:.0f}', ha='center', va='center', fontsize=6.5,
+            ax.text(i, p+f+c/2, f'{c:.0f}', ha='center', va='center', fontsize=6,
                     color='white', fontweight='bold')
         ax.set_ylim(0, 115)
-        ax.legend(prop=fp, fontsize=7, loc='upper right', ncol=1)
+
+        # PFC目標量の範囲を着色
+        # P: 0〜p_val の積み上げ範囲で13-20%Eを示す帯
+        ax.axhspan(PFC_DRI['P'][0], PFC_DRI['P'][1], xmin=0, xmax=1,
+                   color='#E67E22', alpha=0.12, zorder=0,
+                   label=f"P目標: {PFC_DRI['P'][0]}–{PFC_DRI['P'][1]}%E")
+        p_bottom = [np.mean(prot_pct['m']+prot_pct['f'])]*2
+        f_lo = [p_bottom[0]+PFC_DRI['F'][0]]*2
+        f_hi = [p_bottom[0]+PFC_DRI['F'][1]]*2
+        ax.axhspan(f_lo[0], f_hi[0], color='#E74C3C', alpha=0.12, zorder=0,
+                   label=f"F目標: {PFC_DRI['F'][0]}–{PFC_DRI['F'][1]}%E")
+        c_lo = f_hi[0]
+        c_hi = c_lo + (PFC_DRI['C'][1] - PFC_DRI['C'][0])
+        # C帯は上部（目安）
+        ax.axhspan(c_lo, min(c_hi, 110), color='#3498DB', alpha=0.08, zorder=0,
+                   label=f"C目標: {PFC_DRI['C'][0]}–{PFC_DRI['C'][1]}%E")
+
+        ax.legend(prop=fp, fontsize=6.5, loc='upper right', ncol=1)
         ax.axvline(4.5, color='black', lw=1.2, ls='--', alpha=0.5)
 
     else:
-        # ── 通常縦棒 ──
         vals = dat['m'] + dat['f']
         bars = ax.bar(x, vals, color=gender_color, zorder=3,
                       edgecolor='white', linewidth=0.6)
 
-        # 数値ラベル（バー上部）
         for bar, v in zip(bars, vals):
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height(),
                     f'{v:.1f}' if v < 100 else f'{v:.0f}',
@@ -140,11 +231,20 @@ for ax, (dat, title, ylabel, ref, ref_lbl, kind) in zip(axes.flat, panels):
         ax.hlines(mu_f,  4.6, 8.5, colors=CF, lw=1.8, ls=':',
                   label=f'{avg_lbl_f} {mu_f:.1f}')
 
-        if ref is not None:
-            ax.axhline(ref, color='red', lw=1.5, ls='--', alpha=0.8, label=ref_lbl)
+        # ── 食事摂取基準の参照線 ──
+        draw_dri(ax, dri_key, panel_dri_handles)
 
-        ax.legend(prop=fp, fontsize=7, loc='upper right')
+        # 凡例（グループ平均 + DRI）
+        handles, labels = ax.get_legend_handles_labels()
+        all_handles = handles + panel_dri_handles
+        ax.legend(handles=all_handles, prop=fp, fontsize=6.5,
+                  loc='upper right', framealpha=0.85)
         ax.axvline(4.5, color='black', lw=1.2, ls='--', alpha=0.5)
+
+        # 全体凡例用に追加（ラベル重複排除）
+        for h in panel_dri_handles:
+            if h.get_label() not in [g.get_label() for g in global_dri_handles]:
+                global_dri_handles.append(h)
 
     # 共通設定
     ax.set_xticks(x)
@@ -152,21 +252,30 @@ for ax, (dat, title, ylabel, ref, ref_lbl, kind) in zip(axes.flat, panels):
     ax.set_ylabel(ylabel, fontproperties=fp, fontsize=9)
     ax.set_title(title, fontproperties=fp, fontsize=11, fontweight='bold', pad=6)
     ax.set_xlim(-0.6, 8.6)
-    ax.grid(axis='y', ls='--', alpha=0.35, zorder=0)
+    ax.grid(axis='y', ls='--', alpha=0.3, zorder=0)
     ax.set_axisbelow(True)
-
-    # 男性/女性ゾーン背景（薄色）
     ax.axvspan(-0.6, 4.4, alpha=0.04, color=CM, zorder=0)
     ax.axvspan(4.6, 8.6,  alpha=0.04, color=CF, zorder=0)
 
-# 全体凡例（性別）
+# ── 全体凡例（図の下部） ─────────────────────────────────────
 m_patch = mpatches.Patch(color=CM, label='男性グループ (A–E)')
 f_patch = mpatches.Patch(color=CF, label='女性グループ (F–I)')
-fig.legend(handles=[m_patch, f_patch], prop=fp, fontsize=12,
-           loc='lower center', ncol=2, bbox_to_anchor=(0.5, -0.005),
-           frameon=True, edgecolor='gray')
+m_avg   = mlines.Line2D([], [], color=CM, lw=2, ls=':', label='男性グループ平均')
+f_avg   = mlines.Line2D([], [], color=CF, lw=2, ls=':', label='女性グループ平均')
 
-fig.tight_layout(rect=[0, 0.02, 1, 0.995])
+# DRI凡例（重複なし）
+dri_legend_items = [
+    mlines.Line2D([], [], color=CDRI_M,   lw=2, ls='-',  label='食事摂取基準 男性18-29歳'),
+    mlines.Line2D([], [], color=CDRI_M30, lw=2, ls='--', label='食事摂取基準 男性30-49歳（値が異なる場合）'),
+    mlines.Line2D([], [], color=CDRI_F,   lw=2, ls='-',  label='食事摂取基準 女性18-29歳'),
+]
+
+all_legend = [m_patch, f_patch, m_avg, f_avg] + dri_legend_items
+fig.legend(handles=all_legend, prop=fp, fontsize=10,
+           loc='lower center', ncol=3, bbox_to_anchor=(0.5, -0.002),
+           frameon=True, edgecolor='gray', fancybox=True)
+
+fig.tight_layout(rect=[0, 0.035, 1, 0.997])
 out_path = '/home/user/AK/fig_16items.png'
 fig.savefig(out_path, dpi=150, bbox_inches='tight')
 plt.close(fig)

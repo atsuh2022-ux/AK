@@ -46,37 +46,29 @@ for row in ws_l2.iter_rows(min_row=2, values_only=True):
         L2[str(row[0])] = row[1]
 
 # ── 食事摂取基準 読み込み ────────────────────────────────────
-# col: キー, 単位, 種別, m18, m30, f18, f30, lbl_m, lbl_f
+# col: キー, 単位, 種別, m18, f18, lbl_m, lbl_f
 ws_dri = wb["食事摂取基準"]
-DRI = {}  # key -> {m18, m30, f18, f30, type, lbl_m, lbl_f}
+DRI = {}
 for row in ws_dri.iter_rows(min_row=3, values_only=True):
-    if row[0] and str(row[0]).startswith("※") is False:
+    if row[0] and not str(row[0]).startswith("※"):
         DRI[str(row[0])] = {
-            "m18": row[3], "m30": row[4],
-            "f18": row[5], "f30": row[6],
+            "m18": row[3], "f18": row[4],
             "type": row[2] or "",
-            "lbl_m": row[7] or "",
-            "lbl_f": row[8] or "",
+            "lbl_m": row[5] or "",
+            "lbl_f": row[6] or "",
         }
 
-# DRI参照線を描画するヘルパー
-# 男性ゾーン: x = -0.5〜4.4, 女性ゾーン: x = 4.6〜8.5
 CDRI_M = '#1A7A4A'   # 男性DRI: 深緑
 CDRI_F = '#9B2D6F'   # 女性DRI: 深紫
-CDRI_M30 = '#5CB87A' # 男性DRI 30-49y: 薄緑
 
 def draw_dri(ax, dri_key, legend_handles):
-    """DRIシートから値を読み、対応する参照線を描く。"""
+    """DRIシートから値を読み、18〜29歳の参照線を描く。"""
     if dri_key not in DRI:
         return
     d = DRI[dri_key]
-    m18, m30 = d["m18"], d["m30"]
-    f18,  _  = d["f18"], d["f30"]
+    m18, f18 = d["m18"], d["f18"]
     lbl_m, lbl_f = d["lbl_m"], d["lbl_f"]
 
-    drawn = []
-
-    # 男性 18-29y 参照線
     if m18 is not None:
         ax.hlines(m18, -0.5, 4.4, colors=CDRI_M, lw=2.0, ls='-', zorder=4)
         ax.annotate(f'{m18}', xy=(4.4, m18), xytext=(3, 2),
@@ -84,22 +76,8 @@ def draw_dri(ax, dri_key, legend_handles):
                     color=CDRI_M, fontproperties=fp, fontweight='bold')
         if lbl_m and lbl_m not in [h.get_label() for h in legend_handles]:
             legend_handles.append(
-                mlines.Line2D([], [], color=CDRI_M, lw=2, ls='-',
-                              label=lbl_m))
+                mlines.Line2D([], [], color=CDRI_M, lw=2, ls='-', label=lbl_m))
 
-    # 男性 30-49y 参照線（18-29yと異なる場合のみ）
-    if m30 is not None and m30 != m18:
-        ax.hlines(m30, -0.5, 4.4, colors=CDRI_M30, lw=2.0, ls='--', zorder=4)
-        ax.annotate(f'{m30}', xy=(4.4, m30), xytext=(3, -8),
-                    textcoords='offset points', fontsize=6.5,
-                    color=CDRI_M30, fontproperties=fp, fontweight='bold')
-        lbl_m30 = lbl_m.replace('(男)', '(男30-49)') if lbl_m else '男30-49推奨量'
-        if lbl_m30 not in [h.get_label() for h in legend_handles]:
-            legend_handles.append(
-                mlines.Line2D([], [], color=CDRI_M30, lw=2, ls='--',
-                              label=lbl_m30))
-
-    # 女性 18-29y 参照線
     if f18 is not None:
         ax.hlines(f18, 4.6, 8.5, colors=CDRI_F, lw=2.0, ls='-', zorder=4)
         ax.annotate(f'{f18}', xy=(4.6, f18), xytext=(3, 2),
@@ -107,8 +85,7 @@ def draw_dri(ax, dri_key, legend_handles):
                     color=CDRI_F, fontproperties=fp, fontweight='bold')
         if lbl_f and lbl_f not in [h.get_label() for h in legend_handles]:
             legend_handles.append(
-                mlines.Line2D([], [], color=CDRI_F, lw=2, ls='-',
-                              label=lbl_f))
+                mlines.Line2D([], [], color=CDRI_F, lw=2, ls='-', label=lbl_f))
 
 
 # PFC DRI範囲（目標量）
@@ -161,7 +138,7 @@ panels = [
 # ── 描画 ─────────────────────────────────────────────────────
 fig, axes = plt.subplots(4, 4, figsize=(22, 22))
 fig.suptitle("栄養素摂取量 グループ別比較（縦棒グラフ）\n"
-             "━━ 食事摂取基準2020年版の推奨量・目安量・目標量を併記 ━━",
+             "━━ 食事摂取基準2025年版（18〜29歳）の推奨量・目安量を併記 ━━",
              fontproperties=fp, fontsize=17, fontweight='bold', y=0.998)
 
 x = np.arange(9)
@@ -265,9 +242,8 @@ f_avg   = mlines.Line2D([], [], color=CF, lw=2, ls=':', label='女性グルー�
 
 # DRI凡例（重複なし）
 dri_legend_items = [
-    mlines.Line2D([], [], color=CDRI_M,   lw=2, ls='-',  label='食事摂取基準 男性18-29歳'),
-    mlines.Line2D([], [], color=CDRI_M30, lw=2, ls='--', label='食事摂取基準 男性30-49歳（値が異なる場合）'),
-    mlines.Line2D([], [], color=CDRI_F,   lw=2, ls='-',  label='食事摂取基準 女性18-29歳'),
+    mlines.Line2D([], [], color=CDRI_M, lw=2, ls='-', label='食事摂取基準2025年版 男性18-29歳'),
+    mlines.Line2D([], [], color=CDRI_F, lw=2, ls='-', label='食事摂取基準2025年版 女性18-29歳'),
 ]
 
 all_legend = [m_patch, f_patch, m_avg, f_avg] + dri_legend_items

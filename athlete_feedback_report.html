@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athlete Feedback Report | 100m / 400m | 2026.03-05</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: #F0F4F8; color: #2D3748; line-height: 1.6; }
+
+  /* ---- Header ---- */
+  .header { background: linear-gradient(135deg, #1A365D 0%, #2B6CB0 60%, #2E86AB 100%); color: white; padding: 40px 48px; }
+  .header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .header .sub { font-size: 1rem; opacity: 0.85; }
+  .header .period { margin-top: 12px; font-size: 0.85rem; opacity: 0.7; }
+
+  /* ---- Layout ---- */
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  section { margin-bottom: 48px; }
+  h2 { font-size: 1.35rem; font-weight: 700; color: #1A365D; border-left: 5px solid #2E86AB; padding-left: 14px; margin-bottom: 20px; }
+  h3 { font-size: 1.05rem; font-weight: 700; color: #2D3748; margin: 20px 0 10px; }
+
+  /* ---- KPI cards ---- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .kpi-card { background: white; border-radius: 12px; padding: 20px 16px; text-align: center;
+               box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-top: 4px solid #2E86AB; }
+  .kpi-card.green  { border-top-color: #38A169; }
+  .kpi-card.orange { border-top-color: #DD6B20; }
+  .kpi-card.red    { border-top-color: #E53E3E; }
+  .kpi-card.purple { border-top-color: #805AD5; }
+  .kpi-value { font-size: 2rem; font-weight: 800; color: #1A365D; line-height: 1.1; }
+  .kpi-label { font-size: 0.78rem; color: #718096; margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kpi-change { font-size: 0.85rem; margin-top: 4px; font-weight: 700; }
+  .up   { color: #E53E3E; }
+  .down { color: #38A169; }
+  .neutral { color: #718096; }
+
+  /* ---- Chart blocks ---- */
+  .chart-block { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .chart-block img { width: 100%; height: auto; border-radius: 6px; }
+  .chart-caption { font-size: 0.82rem; color: #718096; margin-top: 10px; text-align: center; font-style: italic; }
+
+  /* ---- Insight cards ---- */
+  .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .insight-grid { grid-template-columns: 1fr; } }
+  .insight-card { border-radius: 10px; padding: 18px 20px; }
+  .insight-card.positive { background: #F0FFF4; border-left: 4px solid #38A169; }
+  .insight-card.warning  { background: #FFFAF0; border-left: 4px solid #DD6B20; }
+  .insight-card.neutral  { background: #EBF8FF; border-left: 4px solid #2E86AB; }
+  .insight-card.critical { background: #FFF5F5; border-left: 4px solid #E53E3E; }
+  .insight-title { font-weight: 700; margin-bottom: 6px; font-size: 0.95rem; }
+  .insight-text { font-size: 0.88rem; color: #4A5568; }
+
+  /* ---- Table ---- */
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: #2E86AB; color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid #E2E8F0; }
+  tr:nth-child(even) td { background: #F7FAFC; }
+  tr:hover td { background: #EBF8FF; }
+
+  /* ---- Action list ---- */
+  .action-list { list-style: none; }
+  .action-list li { padding: 10px 14px; margin-bottom: 8px; border-radius: 8px; font-size: 0.9rem;
+                     display: flex; align-items: flex-start; gap: 10px; }
+  .action-list li.pri-1 { background: #FFF5F5; }
+  .action-list li.pri-2 { background: #FFFAF0; }
+  .action-list li.pri-3 { background: #F0FFF4; }
+  .badge { font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 20px;
+            white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .b-red    { background: #FED7D7; color: #C53030; }
+  .b-orange { background: #FEEBC8; color: #C05621; }
+  .b-green  { background: #C6F6D5; color: #276749; }
+
+  /* ---- Footer ---- */
+  .footer { background: #1A365D; color: rgba(255,255,255,0.7); text-align: center;
+             padding: 24px; font-size: 0.8rem; margin-top: 40px; }
+
+  /* ---- Note box ---- */
+  .note { background: #FEFCBF; border-left: 4px solid #D69E2E; border-radius: 6px;
+           padding: 12px 16px; font-size: 0.85rem; color: #744210; margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Athlete Feedback Report</h1>
+  <div class="sub">100m / 400m Track &amp; Field &#8212; Comprehensive Data Analysis</div>
+  <div class="period">Monitoring Period: 2026.03.31 &ndash; 2026.05.14 &nbsp;|&nbsp; Generated: 2026.05.22</div>
+</div>
+
+<div class="container">
+
+  <!-- ===== KPI SUMMARY ===== -->
+  <section>
+    <h2>Key Performance Indicators (Period Summary)</h2>
+    <div class="kpi-grid">
+      <div class="kpi-card green">
+        <div class="kpi-value">69.7<span style="font-size:1rem">kg</span></div>
+        <div class="kpi-label">Latest Body Weight</div>
+        <div class="kpi-change down">&#9660; &minus;0.1 kg</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-value">12.7<span style="font-size:1rem">%</span></div>
+        <div class="kpi-label">Latest Body Fat</div>
+        <div class="kpi-change down">&#9660; &minus;1.2% (good)</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-value">2.7<span style="font-size:1rem">/5</span></div>
+        <div class="kpi-label">Avg Morning Condition</div>
+        <div class="kpi-change neutral">Target: 3.5+</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">7.3<span style="font-size:1rem">h</span></div>
+        <div class="kpi-label">Avg Sleep Duration</div>
+        <div class="kpi-change neutral">Target: 8h+</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-value">3.0<span style="font-size:1rem">/5</span></div>
+        <div class="kpi-label">Avg Nutrition Balance</div>
+        <div class="kpi-change neutral">Moderate</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-value">4</div>
+        <div class="kpi-label">High-RPE Sessions (≥7)</div>
+        <div class="kpi-change neutral">out of 31 sessions</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-value">16</div>
+        <div class="kpi-label">Practice Sessions</div>
+        <div class="kpi-change neutral">+ 7 weight training</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-value">2.9<span style="font-size:1rem">/5</span></div>
+        <div class="kpi-label">Avg Sleep Quality</div>
+        <div class="kpi-change neutral">Target: 3.5+</div>
+      </div>
+    </div>
+    <div class="note">
+      &#9888; <strong>データ注記:</strong> 2026-04-29の体重データ (39.5 kg) は入力エラーの可能性があります。本レポートでは 69.5 kg に補正して集計しています。次回確認をお願いします。
+    </div>
+  </section>
+
+  <!-- ===== OVERVIEW CHARTS ===== -->
+  <section>
+    <h2>Overview Dashboard</h2>
+    <div class="chart-block">
+      <img src="report_fig1_overview.png" alt="Overview Dashboard">
+      <div class="chart-caption">Fig 1 — 6パネル概要ダッシュボード: 体重・体脂肪、起床時コンディション・睡眠の質、睡眠時間、トレーニング負荷、疲労比較、栄養</div>
+    </div>
+
+    <div class="insight-grid">
+      <div class="insight-card positive">
+        <div class="insight-title">✅ 体脂肪率が着実に低下</div>
+        <div class="insight-text">期間全体で 13.9% → 12.7%（&minus;1.2%）。体重はほぼ維持（±0.1 kg）しながら除脂肪量が増加しており、100m/400m選手として理想的な身体組成の変化が見られます。</div>
+      </div>
+      <div class="insight-card warning">
+        <div class="insight-title">⚠️ 起床時コンディションの低下傾向</div>
+        <div class="insight-text">4月中旬以降、起床時コンディションが平均 3〜4 点から 2 点台に低下しています。練習量・強度の増加との関連が疑われます。</div>
+      </div>
+      <div class="insight-card neutral">
+        <div class="insight-title">📊 睡眠時間は安定</div>
+        <div class="insight-text">平均 7.3 時間と比較的安定していますが、アスリートの回復には 8〜9 時間が推奨されます。睡眠の「量」より「質」の改善が優先課題かもしれません（睡眠の質平均 2.9/5）。</div>
+      </div>
+      <div class="insight-card positive">
+        <div class="insight-title">✅ 栄養摂取の多様性が向上</div>
+        <div class="insight-text">4月後半からタンパク質摂取源の種類が増加しています。練習後補食の実施率も向上しており、リカバリー栄養への意識が高まっています。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CORRELATION ANALYSIS ===== -->
+  <section>
+    <h2>Cross-Variable Relationship Analysis</h2>
+    <div class="chart-block">
+      <img src="report_fig2_correlations.png" alt="Correlation Analysis">
+      <div class="chart-caption">Fig 2 — 変数間の関連性分析: 散布図・相関係数・箱ひげ図</div>
+    </div>
+
+    <h3>相関まとめ（本期間データより）</h3>
+    <table>
+      <thead>
+        <tr><th>変数A</th><th>変数B</th><th>相関係数 r</th><th>解釈</th><th>実践的意味</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>睡眠の質</td><td>起床時コンディション</td>
+          <td><strong style="color:#D69E2E">r = 0.27</strong></td>
+          <td>弱い正の相関</td>
+          <td>睡眠の質が上がると翌日のコンディションが改善する傾向。睡眠環境の整備が有効。</td>
+        </tr>
+        <tr>
+          <td>睡眠時間</td><td>練習後疲労度</td>
+          <td><strong style="color:#38A169">r = &minus;0.12</strong></td>
+          <td>弱い負の相関</td>
+          <td>睡眠が長いほど疲労感がやや低い傾向。データ数増加で有意性が高まる可能性あり。</td>
+        </tr>
+        <tr>
+          <td>RPE（前日）</td><td>翌日の起床時コンディション</td>
+          <td><strong style="color:#E53E3E">負の傾向</strong></td>
+          <td>高強度練習後の回復不足</td>
+          <td>RPE 7〜8 の練習翌日はコンディション低下が観察される。計画的な回復日の設定が重要。</td>
+        </tr>
+        <tr>
+          <td>練習後補食</td><td>翌日の起床時コンディション</td>
+          <td><strong style="color:#38A169">YES: 2.92 vs NO: 2.56</strong></td>
+          <td>補食あり群が+0.36点高い</td>
+          <td>練習後30〜60分以内の補食がコンディション回復に寄与。毎回の実施を推奨。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== WEEKLY / RADAR ===== -->
+  <section>
+    <h2>Weekly Progression &amp; Radar Analysis</h2>
+    <div class="chart-block">
+      <img src="report_fig3_weekly.png" alt="Weekly Heatmap and Radar">
+      <div class="chart-caption">Fig 3 — 週次ヒートマップ（緑=良好、赤=要注意）と前半・後半のレーダーチャート比較</div>
+    </div>
+
+    <div class="insight-grid">
+      <div class="insight-card warning">
+        <div class="insight-title">⚠️ 前半 vs 後半の比較（レーダーチャート）</div>
+        <div class="insight-text">
+          5月以降（後半）は<strong>朝のコンディション・睡眠の質が低下</strong>している一方、
+          睡眠時間・タンパク質摂取は維持されています。
+          試合期に向けた練習強度増加に対し、回復が追いついていない可能性があります。
+        </div>
+      </div>
+      <div class="insight-card neutral">
+        <div class="insight-title">📅 週次ヒートマップの読み方</div>
+        <div class="insight-text">
+          W14〜W15（4月初旬）は体調・睡眠ともに比較的良好でしたが、
+          W16〜W17（4月中〜下旬）に疲労蓄積が見られます。
+          W18（5月）は栄養バランスがやや改善しています。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TRAINING DETAILS ===== -->
+  <section>
+    <h2>Training Details &amp; Performance Indicators</h2>
+    <div class="chart-block">
+      <img src="report_fig4_training.png" alt="Training Details">
+      <div class="chart-caption">Fig 4 — RPE推移、爆発力vs持久力散布図、7日移動平均トレンド、統計サマリー表</div>
+    </div>
+
+    <div class="insight-grid">
+      <div class="insight-card positive">
+        <div class="insight-title">✅ 実践トレーニング中心の構成</div>
+        <div class="insight-text">全31セッションのうち実践トレーニング16回、ウエイトトレーニング7回、休養日8回。100m/400mの競技特性に合った構成です。</div>
+      </div>
+      <div class="insight-card neutral">
+        <div class="insight-title">💡 爆発力 vs 持久力のバランス</div>
+        <div class="insight-text">実践トレーニングは爆発力・持久力ともに3〜4点台で両立している傾向。ウエイトトレーニングも爆発力発揮に貢献しています。400mの後半スピード維持に向けた持久力強化を継続してください。</div>
+      </div>
+      <div class="insight-card warning">
+        <div class="insight-title">⚠️ 4月25日・5月9日の高負荷セッション</div>
+        <div class="insight-text">RPE 8 の実践＋ウエイトの同日2部練が観察されます。翌日のコンディション低下と連動しています。同日2部練後は必ず十分な栄養補給と睡眠8h+を確保してください。</div>
+      </div>
+      <div class="insight-card positive">
+        <div class="insight-title">✅ 7日移動平均トレンド</div>
+        <div class="insight-text">7日移動平均でみると、コンディションと疲労度は逆相関の傾向にあります。高疲労期間が過ぎるとコンディションが回復するパターンが見られ、回復管理の成果が出始めています。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RECOMMENDATIONS ===== -->
+  <section>
+    <h2>Recommendations &amp; Action Items</h2>
+    <ul class="action-list">
+      <li class="pri-1">
+        <span class="badge b-red">優先度 高</span>
+        <div><strong>睡眠の質を改善する</strong> — 現在の睡眠の質スコアは平均 2.9/5。
+        就寝1時間前のスクリーン断ち、入浴でのリラックス、入眠時間の固定化を実施してください。
+        睡眠の質が上がると翌朝のコンディション（r=0.27）と練習パフォーマンスが改善します。</div>
+      </li>
+      <li class="pri-1">
+        <span class="badge b-red">優先度 高</span>
+        <div><strong>練習後補食を毎回必ず実施する</strong> — 補食あり群は翌朝コンディションが平均+0.36点高い。
+        練習後30分以内に糖質20〜30g+タンパク質15〜20gの補食（おにぎり+プロテインなど）を徹底してください。</div>
+      </li>
+      <li class="pri-2">
+        <span class="badge b-orange">優先度 中</span>
+        <div><strong>高強度練習（RPE≥7）の翌日に必ず回復日を設ける</strong> — 現データでは高RPE翌日のコンディション低下が観察されています。
+        ウォームダウン、ストレッチ、睡眠8時間以上を組み合わせたリカバリープロトコルを確立してください。</div>
+      </li>
+      <li class="pri-2">
+        <span class="badge b-orange">優先度 中</span>
+        <div><strong>睡眠時間を8時間以上に増やす</strong> — 現在の平均7.3時間から8〜9時間へ。
+        就寝時間を30分早めるだけでも累積的に大きな効果があります。
+        特に2部練翌日は9時間以上を確保することを推奨します。</div>
+      </li>
+      <li class="pri-3">
+        <span class="badge b-green">優先度 通常</span>
+        <div><strong>タンパク質摂取源の多様性を維持・向上させる</strong> — 魚・肉・大豆・卵のバランスをより意識して、
+        1日あたり3〜4種類以上の摂取を目指してください。特に昼食のタンパク質強化が課題です。</div>
+      </li>
+      <li class="pri-3">
+        <span class="badge b-green">優先度 通常</span>
+        <div><strong>体重・体脂肪率の定期測定を継続する</strong> — 体脂肪率は-1.2%と良好な変化。
+        同体重・低体脂肪の身体組成を維持しながら、さらなる筋量増加を目指してください。
+        次の目標：体脂肪率 12%以下、除脂肪体重増加。</div>
+      </li>
+      <li class="pri-3">
+        <span class="badge b-green">優先度 通常</span>
+        <div><strong>データ入力を毎日継続する（特に食事シート）</strong> — 4月以前の食事タンパク質源データが空欄になっています。
+        より精密な栄養分析のためにも日々の記録を習慣化してください。</div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ===== DATA NOTE ===== -->
+  <section>
+    <h2>Data Notes</h2>
+    <div class="insight-grid">
+      <div class="insight-card critical">
+        <div class="insight-title">🔴 体重データの入力ミスを確認</div>
+        <div class="insight-text">2026-04-29 の体重が 39.5 kg と記録されています。前後の記録（69.5 kg前後）と大きく乖離しているため、入力ミスの可能性が高いです。本レポートでは 69.5 kg に補正して集計しました。元データを確認・修正してください。</div>
+      </div>
+      <div class="insight-card neutral">
+        <div class="insight-title">📝 食事データの空欄について</div>
+        <div class="insight-text">3月31日〜4月7日の食事タンパク質源（昼・夕）が空欄です。遡って入力できる場合は追記をお願いします。より長期間のデータが蓄積されると、栄養とパフォーマンスの関連をより精度高く分析できます。</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="footer">
+  Athlete Feedback Report &nbsp;|&nbsp; 100m / 400m Track &amp; Field &nbsp;|&nbsp; 2026.03.31 &ndash; 2026.05.14<br>
+  このレポートは記録データの統計分析に基づいています。トレーニング計画の変更はコーチと相談の上で行ってください。
+</div>
+
+</body>
+</html>

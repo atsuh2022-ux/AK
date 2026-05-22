@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>選手フィードバックレポート 2026</title>
+<style>
+:root{
+  --green:#38A169; --yellow:#D69E2E; --orange:#DD6B20; --red:#E53E3E;
+  --blue:#2E86AB; --blue-light:#EBF8FF;
+  --shadow:0 2px 8px rgba(0,0,0,0.08); --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Kaku Gothic ProN','Meiryo',sans-serif;
+  background:#F0F4F8; color:#2D3748; font-size:14px; line-height:1.6;
+}
+nav{
+  position:sticky; top:0; z-index:100;
+  background:#1A365D; display:flex; gap:2px; padding:0 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.2); overflow-x:auto;
+}
+nav a{
+  display:inline-block; padding:14px 20px; color:#BEE3F8; text-decoration:none;
+  font-size:13px; font-weight:600; white-space:nowrap;
+  border-bottom:3px solid transparent; transition:all 0.2s;
+}
+nav a:hover,nav a.active{color:white;border-bottom-color:#63B3ED;background:rgba(255,255,255,0.05);}
+.main-header{
+  background:linear-gradient(135deg,#1A365D 0%,#2E86AB 100%);
+  color:white; padding:32px 24px; text-align:center;
+}
+.main-header h1{font-size:1.8em;font-weight:800;letter-spacing:0.02em;margin-bottom:6px;}
+.main-header .subtitle{font-size:1em;opacity:0.85;}
+.section{display:none;max-width:1200px;margin:0 auto;padding:24px 16px 48px;}
+.section.active{display:block;}
+.card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:20px;}
+.card-title{
+  font-size:1.1em;font-weight:700;color:var(--blue);margin-bottom:16px;
+  padding-bottom:8px;border-bottom:2px solid var(--blue-light);
+  display:flex;align-items:center;gap:8px;
+}
+.card-title::before{
+  content:'';display:inline-block;width:4px;height:1.1em;
+  background:var(--blue);border-radius:2px;
+}
+.kpi-table{width:100%;border-collapse:collapse;font-size:0.92em;}
+.kpi-table th{background:#2D3748;color:white;padding:10px 14px;text-align:left;font-weight:600;}
+.kpi-table td{padding:9px 14px;border-bottom:1px solid #E2E8F0;}
+.kpi-table tr:nth-child(even) td{background:#F7FAFC;}
+.kpi-table tr:hover td{background:#EBF8FF;}
+.kpi-value{font-weight:700;font-size:1.05em;color:#1A365D;}
+.comment-box{background:#FFFBEB;border-left:4px solid var(--yellow);border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:16px;}
+.comment-box h4{font-size:1em;font-weight:700;color:#744210;margin-bottom:8px;}
+.comment-box p{color:#78350F;line-height:1.75;}
+.good-comment{background:#F0FFF4;border-left-color:var(--green);}
+.good-comment h4{color:#276749;} .good-comment p{color:#22543D;}
+.warn-comment{background:#FFF5F5;border-left-color:var(--red);}
+.warn-comment h4{color:#742A2A;} .warn-comment p{color:#63171B;}
+.goal-comment{background:var(--blue-light);border-left-color:var(--blue);}
+.goal-comment h4{color:#1A365D;} .goal-comment p{color:#2C5282;}
+.qa-block{background:#F7FAFC;border-radius:8px;padding:16px;margin-bottom:12px;}
+.qa-q{font-weight:700;color:var(--blue);margin-bottom:8px;}
+.qa-a{background:white;border:1px dashed #CBD5E0;border-radius:6px;padding:32px 12px;
+       color:#A0AEC0;font-style:italic;text-align:center;min-height:60px;}
+.daily-table{width:100%;border-collapse:collapse;font-size:0.82em;overflow-x:auto;display:block;}
+.daily-table th{background:#2D3748;color:white;padding:8px 10px;white-space:nowrap;
+                 position:sticky;top:48px;font-size:0.84em;}
+.daily-table td{padding:7px 10px;border-bottom:1px solid #E2E8F0;text-align:center;white-space:nowrap;}
+.daily-table tr:hover td{filter:brightness(0.96);}
+.chart-container{text-align:center;margin:16px 0;}
+.chart-container img{max-width:100%;border-radius:8px;box-shadow:var(--shadow);}
+.chart-caption{font-size:0.85em;color:#718096;margin-top:8px;font-style:italic;}
+.corr-table{width:100%;border-collapse:collapse;font-size:0.88em;margin-top:12px;}
+.corr-table th{background:#2D3748;color:white;padding:10px 12px;text-align:left;}
+.corr-table td{padding:10px 12px;border-bottom:1px solid #E2E8F0;}
+.corr-table tr:nth-child(even) td{background:#F7FAFC;}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.8em;font-weight:600;}
+.badge-green{background:#C6F6D5;color:#276749;}
+.badge-yellow{background:#FEFCBF;color:#744210;}
+.badge-red{background:#FED7D7;color:#742A2A;}
+.hint-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px;}
+.hint-item{background:#F0FFF4;border:1px solid #9AE6B4;border-radius:8px;padding:14px;}
+.hint-item.warn{background:#FFFBEB;border-color:#F6E05E;}
+.hint-title{font-weight:700;font-size:0.9em;color:#276749;margin-bottom:6px;}
+.hint-item.warn .hint-title{color:#744210;}
+.section-header{
+  font-size:1.3em;font-weight:800;color:#1A365D;margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-header .num{
+  background:var(--blue);color:white;width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:0.85em;flex-shrink:0;
+}
+@media(max-width:600px){
+  nav a{padding:12px 10px;font-size:11px;}
+  .main-header h1{font-size:1.3em;}
+  .card{padding:16px;}
+}
+</style>
+</head>
+<body>
+<div class="main-header">
+  <h1>選手フィードバックレポート</h1>
+  <div class="subtitle">2026.03.31 – 2026.05.14　｜　自動生成レポート</div>
+</div>
+<nav>
+  <a href="#" class="active" onclick="return showSec('summary',this)">① サマリー</a>
+  <a href="#" onclick="return showSec('daily',this)">② 日次統合データ</a>
+  <a href="#" onclick="return showSec('nutrition',this)">③ 食事バランス</a>
+  <a href="#" onclick="return showSec('trends',this)">④ トレンドグラフ</a>
+  <a href="#" onclick="return showSec('correlation',this)">⑤ 関連性ヒント</a>
+</nav>
+
+<!-- ① SUMMARY -->
+<div id="summary" class="section active">
+  <div class="section-header"><div class="num">①</div>サマリー</div>
+
+  <div class="card">
+    <div class="card-title">KPI 主要指標</div>
+    <table class="kpi-table">
+      <thead><tr><th>指標</th><th>今期間値</th><th>評価コメント</th></tr></thead>
+      <tbody>
+        <tr><td>総トレーニング日数（休養除く）</td><td class="kpi-value">21 日</td><td>計画的な練習量を維持できている</td></tr>
+        <tr><td>総トレーニング時間（分）</td><td class="kpi-value">3150 分（約 52.5 時間）</td><td>十分なトレーニングボリューム</td></tr>
+        <tr><td>平均RPE（練習日のみ）</td><td class="kpi-value">4.9 / 10</td><td>やや低強度</td></tr>
+        <tr><td>平均運動後疲労（練習日のみ）<small>（1=低疲労/5=高疲労）</small></td><td class="kpi-value">2.64</td><td>まずまず</td></tr>
+        <tr><td>平均睡眠時間（h）</td><td class="kpi-value">7.34 h</td><td>7時間以上確保できている</td></tr>
+        <tr><td>平均睡眠の質<small>（1=良/5=悪）</small></td><td class="kpi-value">2.79</td><td>普通レベル</td></tr>
+        <tr><td>平均起床時コンディション<small>（1=良/5=悪）</small></td><td class="kpi-value">2.72</td><td>普通レベル</td></tr>
+        <tr><td>平均体重（kg）</td><td class="kpi-value">69.6 kg</td><td>期初 69.8 kg → 期末 69.7 kg（-0.1 kg）</td></tr>
+        <tr><td>体重変動幅（kg）</td><td class="kpi-value">2.1 kg</td><td>体重変動がやや大きい</td></tr>
+        <tr><td>体脂肪率　期初 → 期末</td><td class="kpi-value">13.9% → 12.7%（-1.2%）</td><td>体脂肪率が改善傾向</td></tr>
+        <tr><td>練習後補食「はい」の日数</td><td class="kpi-value">13 日 / 29 日</td><td>補食の機会をもっと増やしたい</td></tr>
+        <tr><td>タンパク源の平均種類数</td><td class="kpi-value">2.45 種類 / 日</td><td>もう少し多様化を</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">コーチコメント</div>
+    <div class="comment-box good-comment">
+      <h4>① よかった点</h4>
+      <p>
+        今期間を通じて<strong>運動後疲労の平均 2.6（5段階）</strong>と概ね良好な疲労管理ができていました。
+        特に調子の良かった日（04/13, 04/15, 04/20, 04/21, 04/27, 04/29）は、
+        起床時コンディション・運動後疲労ともに1〜2の良好な状態を維持できています。<br>
+        補食実施日の翌日疲労は平均 <strong>1.96</strong>（補食なし: 2.27）と
+        補食の効果がデータに現れています。
+        睡眠時間は平均 <strong>7.3h</strong> 確保でき、
+        体脂肪率も 13.9% → 12.7% と改善傾向しています。
+        多様なタンパク源（3種以上）を摂った日の翌朝コンディションは
+        <strong>2.37</strong>（少ない日: 3.44）と
+        より良好な傾向です。
+      </p>
+    </div>
+    <div class="comment-box warn-comment">
+      <h4>② 気になった点</h4>
+      <p>
+        運動後疲労が4以上の高疲労日が計 <strong>4日</strong>
+        （03/31, 04/07, 04/25, 05/09）ありました。
+        起床時コンディションが4以上の日も <strong>6日</strong>
+        （04/05, 04/06, 04/07, 04/19, 05/05, 05/09）観察されています。<br>
+        高疲労日のうち補食なしの日は 03/31, 04/07 で、
+        回復栄養の不足が疲労蓄積に関係している可能性があります。
+        タンパク質摂取では <strong>「昼:魚」が 4日</strong>と最も少なく、
+        特定食材への偏りが見られます。
+        睡眠の質が悪い日（≥3）の練習中疲労は平均 2.83（良い日: 2.17）と
+        高い傾向があります。
+      </p>
+    </div>
+    <div class="comment-box goal-comment">
+      <h4>③ 次の大会までの小さな目標</h4>
+      <p>
+        <strong>「練習後は必ず補食を行い、夕食で昼と異なる2種類以上のタンパク源を意識する」</strong><br>
+        練習後30分以内にプロテインまたはおにぎり＋卵等を摂取し、
+        今期間で最も少なかった「昼:魚（4日）」を週3回以上取り入れることを目標にしましょう。
+        補食あり→翌日疲労 1.96 vs なし→ 2.27 のデータからも、
+        補食の効果は数値として現れています。
+        まず2週間継続して変化を記録してください。
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">選手への質問（記入欄）</div>
+    <div class="qa-block">
+      <div class="qa-q">Q1. 今期間で一番調子よく練習できた日はいつですか？そのとき何が良かったと思いますか？</div>
+      <div class="qa-a">（選手記入欄）</div>
+    </div>
+    <div class="qa-block">
+      <div class="qa-q">Q2. 疲労が高かった日（03/31, 04/07, 04/25 等）を振り返って、前日や当日に気になったことはありましたか？</div>
+      <div class="qa-a">（選手記入欄）</div>
+    </div>
+    <div class="qa-block">
+      <div class="qa-q">Q3. 次期間に向けて、自分で取り組みたいことを1つ教えてください。</div>
+      <div class="qa-a">（選手記入欄）</div>
+    </div>
+  </div>
+</div>
+
+<!-- ② DAILY DATA -->
+<div id="daily" class="section">
+  <div class="section-header"><div class="num">②</div>日次統合データ</div>
+  <div class="card">
+    <div class="card-title">カラーコード凡例</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      <span class="badge badge-green">1-2: 良好</span>
+      <span class="badge badge-yellow">3: 注意</span>
+      <span class="badge badge-red">4-5: 要注意</span>
+      <span style="background:#C6F6D5;padding:2px 8px;border-radius:12px;font-size:0.8em;font-weight:600;color:#276749;">補食あり</span>
+      <span style="background:#F7FAFC;padding:2px 8px;border-radius:12px;font-size:0.8em;font-weight:600;color:#718096;border:1px solid #E2E8F0;">補食なし</span>
+      <span style="background:#F5F7FA;padding:2px 8px;border-radius:12px;font-size:0.8em;color:#A0AEC0;border:1px solid #E2E8F0;">休養日（薄グレー）</span>
+    </div>
+    <p style="font-size:0.82em;color:#718096;">疲労・コンディション・睡眠の質は「1=良/5=悪」。RPEは「1=楽/10=最大」。</p>
+  </div>
+  <div class="card" style="padding:12px;overflow-x:auto;">
+    <table class="daily-table">
+      <thead>
+        <tr>
+          <th>日付</th><th>種目</th><th>時間(分)</th><th>RPE</th>
+          <th>爆発力</th><th>持久力</th><th>運動後疲労</th><th>体重(kg)</th>
+          <th>起床時CD</th><th>睡眠の質</th><th>睡眠時間</th><th>補食</th><th>栄養Bal</th>
+        </tr>
+      </thead>
+      <tbody>
+    <tr style="background:white">
+      <td style="font-weight:600">03/31</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>60</td>
+      <td style="background-color:#FEE2E2;">8</td>
+      <td>2</td>
+      <td>2</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>69.8</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/01</td>
+      <td style="font-size:0.83em">ウエイトトレーニング</td>
+      <td>120</td>
+      <td style="background-color:#C6F6D5;">4</td>
+      <td>3</td>
+      <td>2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.8</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7.5</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/03</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>120</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>69.6</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">04/05</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>69.8</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td style="background-color:#C6F6D5;">1</td>
+      <td>8</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/06</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>240</td>
+      <td style="background-color:#C6F6D5;">4</td>
+      <td>2</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>70.8</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/07</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>180</td>
+      <td style="background-color:#FEFCBF;">7</td>
+      <td>2</td>
+      <td>2</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>69.7</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>7.5</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/08</td>
+      <td style="font-size:0.83em">ウエイトトレーニング</td>
+      <td>120</td>
+      <td style="background-color:#C6F6D5;">4</td>
+      <td>2</td>
+      <td>2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>70</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7.5</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">04/09</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>70</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/13</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>180</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.8</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>8</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/14</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>150</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>2</td>
+      <td>3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>69.8</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7.5</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/15</td>
+      <td style="font-size:0.83em">ウエイトトレーニング</td>
+      <td>150</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>4</td>
+      <td>4</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.8</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>8</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/19</td>
+      <td style="font-size:0.83em">ウエイトトレーニング</td>
+      <td>90</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>2</td>
+      <td>2</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>69.4</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">04/20</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>69.5</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7.5</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/21</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>180</td>
+      <td style="background-color:#C6F6D5;">4</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.8</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7.5</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/24</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>150</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>2</td>
+      <td>3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>69.6</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/25</td>
+      <td style="font-size:0.83em">実践トレーニング/ウエイトトレーニング</td>
+      <td>270</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>3</td>
+      <td>3.5</td>
+      <td style="background-color:#FED7D7;">4.5</td>
+      <td>69</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>8</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/27</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>120</td>
+      <td style="background-color:#C6F6D5;">4</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.6</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td>7.5</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/28</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>120</td>
+      <td style="background-color:#FEFCBF;">6</td>
+      <td>2</td>
+      <td>4</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.5</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">04/29</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>180</td>
+      <td style="background-color:#C6F6D5;">3</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">1</td>
+      <td>69.5</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>3</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">05/02</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>60</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>2</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">05/04</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>68.8</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">05/05</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>120</td>
+      <td style="background-color:#C6F6D5;">3</td>
+      <td>3</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>69.8</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td style="background-color:#FED7D7;">5</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">05/07</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>69.7</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">05/09</td>
+      <td style="font-size:0.83em">実践トレーニング/ウエイトトレーニング</td>
+      <td>300</td>
+      <td style="background-color:#FEFCBF;">7</td>
+      <td>3.5</td>
+      <td>2.5</td>
+      <td style="background-color:#FED7D7;">5</td>
+      <td>69</td>
+      <td style="background-color:#FED7D7;">4</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">05/10</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>69.4</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7.5</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">05/11</td>
+      <td style="font-size:0.83em">実践トレーニング</td>
+      <td>120</td>
+      <td style="background-color:#C6F6D5;">5</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>69.7</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td style="background-color:#FEFCBF;">3</td>
+      <td>7</td>
+      <td style="background-color:#C6F6D5;">はい</td>
+      <td>4</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">05/12</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>69.6</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>8</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:white">
+      <td style="font-weight:600">05/13</td>
+      <td style="font-size:0.83em">ウエイトトレーニング</td>
+      <td>120</td>
+      <td style="background-color:#C6F6D5;">3</td>
+      <td>4</td>
+      <td>3</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>68.7</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>8</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>2</td>
+    </tr>
+    <tr style="background:#F5F7FA">
+      <td style="font-weight:600">05/14</td>
+      <td style="font-size:0.83em">休養日</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>-</td>
+      <td>-</td>
+      <td style="">-</td>
+      <td>69.7</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td style="background-color:#C6F6D5;">2</td>
+      <td>7</td>
+      <td style="background-color:#F7FAFC;">いいえ</td>
+      <td>3</td>
+    </tr></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">トレンドグラフ（概要）</div>
+    <div class="chart-container">
+      <img src="fig_A_trends.png" alt="4指標トレンド">
+      <div class="chart-caption">体重・体脂肪・コンディション・睡眠・RPEの期間推移</div>
+    </div>
+  </div>
+</div>
+
+<!-- ③ NUTRITION -->
+<div id="nutrition" class="section">
+  <div class="section-header"><div class="num">③</div>食事バランス</div>
+  <div class="card">
+    <div class="card-title">タンパク質摂取カレンダー</div>
+    <div class="chart-container">
+      <img src="fig_C_protein_calendar.png" alt="タンパク質カレンダー">
+      <div class="chart-caption">各日の昼・夕タンパク質源（魚/肉/豆/卵）と補食。●=摂取あり、最下行=合計/平均</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">食事バランス ヒント</div>
+    <div class="hint-grid">
+      <div class="hint-item warn">
+        <div class="hint-title">⚠ 最も少ないタンパク源</div>
+        <p style="font-size:0.9em;color:#744210;">
+          <strong>「昼:魚」が 4日</strong>と最も少ない。
+          次いで「夕:豆」(5日)。
+          バランス良く摂取するよう意識しましょう。
+        </p>
+      </div>
+      <div class="hint-item">
+        <div class="hint-title">✓ 最も多いタンパク源</div>
+        <p style="font-size:0.9em;color:#276749;">
+          <strong>「夕:肉」が 19日</strong>と最もよく摂取できています。
+          この習慣を継続しながら他の食材も取り入れましょう。
+        </p>
+      </div>
+      <div class="hint-item warn">
+        <div class="hint-title">⚠ タンパク質0種の日</div>
+        <p style="font-size:0.9em;">
+          タンパク質源の記録が0の日が <strong>6日</strong>
+          (03/31, 04/01, 04/03, 04/05, 04/06, 04/07)。
+          記録漏れか摂取増加が必要。
+        </p>
+      </div>
+      <div class="hint-item">
+        <div class="hint-title">📊 補食実施状況</div>
+        <p style="font-size:0.9em;color:#276749;">
+          補食実施 <strong>13日 / 29日</strong>（45%）。
+          補食あり→翌日疲労 <strong>1.96</strong> / 補食なし→ <strong>2.27</strong>。
+          補食の効果がデータに現れています。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ④ TRENDS -->
+<div id="trends" class="section">
+  <div class="section-header"><div class="num">④</div>トレンドグラフ</div>
+  <div class="card">
+    <div class="card-title">4指標トレンド（体重・コンディション・睡眠・RPE）</div>
+    <div class="chart-container">
+      <img src="fig_A_trends.png" alt="4指標トレンド">
+      <div class="chart-caption">上から: ①体重・体脂肪 ②起床時コンディション・睡眠の質（低=良） ③睡眠時間（緑=7h以上） ④RPE・練習時間（練習日のみ）</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">疲労・コンディション・RPEタイムライン</div>
+    <div class="chart-container">
+      <img src="fig_E_fatigue_timeline.png" alt="疲労タイムライン">
+      <div class="chart-caption">
+        赤線=運動後疲労、緑線=起床時コンディション（低=良）、青破線=RPE/2。
+        赤背景バンド = 運動後疲労≥4の高疲労日（計 4日）
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">日次ヒートマップ</div>
+    <div class="chart-container">
+      <img src="fig_B_daily_heatmap.png" alt="日次ヒートマップ">
+      <div class="chart-caption">全指標を日付×指標マトリックスで可視化。緑=良好、黄=注意、赤=要注意。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ⑤ CORRELATION -->
+<div id="correlation" class="section">
+  <div class="section-header"><div class="num">⑤</div>関連性ヒント</div>
+  <div class="card">
+    <div class="card-title">4つの比較分析チャート</div>
+    <div class="chart-container">
+      <img src="fig_D_correlation.png" alt="関連性チャート">
+      <div class="chart-caption">各グループ間の指標平均値比較。緑=良好なグループ、赤=注意が必要なグループ。差も表示。</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">比較分析サマリー表</div>
+    <table class="corr-table">
+      <thead>
+        <tr>
+          <th>比較条件</th><th>対象指標</th>
+          <th>グループA（良好）</th><th>グループB（悪）</th>
+          <th>差（A−B）</th><th>解釈</th>
+        </tr>
+      </thead>
+      <tbody>
+<tr>
+  <td>補食あり vs 補食なし</td>
+  <td>翌日の運動後疲労（低いほど良）</td>
+  <td style="background:#C6F6D5;font-weight:600">1.96</td>
+  <td>2.27</td>
+  <td style="color:#38A169;font-weight:600">-0.31</td>
+  <td>補食ありの方が翌日の疲労が低い傾向</td>
+</tr>
+<tr>
+  <td>睡眠≥7h vs ＜7h</td>
+  <td>練習RPE（高いほど良）</td>
+  <td style="background:#C6F6D5;font-weight:600">4.86</td>
+  <td>データなし（全日7h以上）</td>
+  <td>—</td>
+  <td>今期間は全日7h以上の睡眠が確保できています。引き続き維持しましょう。</td>
+</tr>
+<tr>
+  <td>睡眠の質≤2（良）vs ≥3（悪）</td>
+  <td>練習中疲労（低いほど良）</td>
+  <td style="background:#C6F6D5;font-weight:600">2.17</td>
+  <td>2.83</td>
+  <td style="color:#38A169;font-weight:600">-0.67</td>
+  <td>睡眠の質が良いと練習中の疲労が低い傾向</td>
+</tr>
+<tr>
+  <td>タンパク≥3種 vs 0-2種</td>
+  <td>翌日の起床時CD（低いほど良）</td>
+  <td style="background:#C6F6D5;font-weight:600">2.37</td>
+  <td>3.44</td>
+  <td style="color:#38A169;font-weight:600">-1.08</td>
+  <td>多様なタンパク源が翌朝のコンディション向上に関連</td>
+</tr>
+</tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">解釈ガイド</div>
+    <div class="hint-grid">
+      <div class="hint-item">
+        <div class="hint-title">(a) 補食と翌日疲労</div>
+        <p style="font-size:0.88em;">練習後の補食は筋グリコーゲン回復を促進します。
+        補食あり: 1.96 vs なし: 2.27（疲労スコア、低=良）。
+        差 0.31で補食の効果が示唆されます。</p>
+      </div>
+      <div class="hint-item">
+        <div class="hint-title">(b) 睡眠時間とRPE</div>
+        <p style="font-size:0.88em;">7時間以上の睡眠でRPE=4.86。今期間は全日7時間以上確保できているため比較データなし。
+        睡眠7h以上を今後も維持しましょう。
+        現在の平均睡眠 7.3h は 良好です。</p>
+      </div>
+      <div class="hint-item">
+        <div class="hint-title">(c) 睡眠の質と疲労</div>
+        <p style="font-size:0.88em;">睡眠質良好（≤2）の疲労=2.17、悪い（≥3）= 2.83。
+        睡眠の質が練習疲労に影響しています。
+        就寝前のルーティン統一（入浴・スマホオフ等）を推奨します。</p>
+      </div>
+      <div class="hint-item">
+        <div class="hint-title">(d) タンパク多様性と翌朝CD</div>
+        <p style="font-size:0.88em;">タンパク3種以上の翌朝CD=2.37、0-2種=3.44（低=良）。
+        多様なアミノ酸が回復に寄与している可能性。
+        最も少ない「昼:魚」の摂取増加が効果的かもしれません。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showSec(id, link) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  link.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  return false;
+}
+document.addEventListener('keydown', function(e) {
+  const secs=['summary','daily','nutrition','trends','correlation'];
+  const links=document.querySelectorAll('nav a');
+  let cur=-1;
+  secs.forEach((s,i) => { if(document.getElementById(s).classList.contains('active')) cur=i; });
+  if(e.key==='ArrowRight'&&cur<secs.length-1) showSec(secs[cur+1],links[cur+1]);
+  else if(e.key==='ArrowLeft'&&cur>0) showSec(secs[cur-1],links[cur-1]);
+});
+</script>
+<footer style="background:#2D3748;color:#A0AEC0;text-align:center;padding:16px;font-size:0.8em;margin-top:20px;">
+  自動生成レポート | データ期間: 2026.03.31–2026.05.14 | 体重外れ値補正済み（04/29: 39.5→69.5kg）
+</footer>
+</body>
+</html>

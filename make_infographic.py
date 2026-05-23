@@ -46,6 +46,11 @@ items = [
     ("⑫夕食に魚",        "なし",    6.62, "あり",     6.10, "翌日RPE",      "C", ""),
     ("⑬昼食タンパク質",  "0種",     3.68, "1種以上",  3.44, "翌日運動後疲労","C", ""),
     ("⑭夕食タンパク質",  "1〜2種",  3.55, "3種以上",  3.55, "翌日運動後疲労","C", ""),
+    # Section D
+    ("⑮両方いいえ vs 両方はい", "両方いいえ", 7.00, "両方はい", 6.13, "翌日RPE",      "D", ""),
+    ("⑯補食のみ vs 両方はい",   "補食のみ",   6.50, "両方はい", 6.13, "翌日RPE",      "D", ""),
+    ("⑰きのこのみ vs 両方はい", "きのこのみ", 6.50, "両方はい", 6.13, "翌日RPE",      "D", ""),
+    ("⑱両方いいえ vs 両方はい", "両方いいえ", 4.00, "両方はい", 3.52, "翌日運動後疲労","D", ""),
 ]
 
 # Compute diffs and classify
@@ -99,11 +104,12 @@ note_h   = 1.5
 
 # Build row-height list
 row_heights = [title_h]
-section_order = ["A", "B", "C"]
+section_order = ["A", "B", "C", "D"]
 section_labels = {
     "A": "Section A: 既存５項目",
     "B": "Section B: 新規追加（４項目）",
     "C": "Section C: タンパク質詳細（５項目）",
+    "D": "Section D: 補食 × きのこ海藻 組み合わせ効果（４項目）",
 }
 section_items = {s: [i for i, it in enumerate(items) if it[6] == s] for s in section_order}
 
@@ -347,7 +353,8 @@ ax_main.text(0.5, note_bot + note_h_ * 0.65,
              "　差 = 条件A値 − 条件B値",
              ha='center', va='center', fontsize=8, color='#444', zorder=2)
 ax_main.text(0.5, note_bot + note_h_ * 0.28,
-             "※ 睡眠の質→翌日RPE は統計的有意差あり（p = 0.021）",
+             "※ 睡眠の質→翌日RPE は統計的有意差あり（p = 0.021）　　"
+             "※ Section D：補食×きのこ海藻の組み合わせ別比較（翌日が練習日のみ）",
              ha='center', va='center', fontsize=8, color='#8B008B', zorder=2)
 
 # ── X-axis reference bar at bottom of each section visible ───────────────────

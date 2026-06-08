@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>栄養計算アプリ — 日本食品成分表 八訂</title>
+  <style>
+    :root {
+      --green: #2e7d51;
+      --green-light: #e8f5ee;
+      --green-mid: #4caf7a;
+      --bg: #f4f6f4;
+      --card: #ffffff;
+      --text: #1a2e1a;
+      --muted: #6b7b6b;
+      --border: #d4e0d4;
+      --warn: #e07a00;
+      --danger: #c0392b;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--green);
+      color: #fff;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header small { font-size: 0.75rem; opacity: 0.8; margin-left: 4px; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 760px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .card h2 {
+      font-size: 1rem;
+      color: var(--green);
+      margin-bottom: 14px;
+      border-bottom: 2px solid var(--green-light);
+      padding-bottom: 8px;
+    }
+
+    /* Search */
+    .search-wrap { position: relative; }
+    .search-wrap input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--green-mid); }
+
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0 0 8px 8px;
+      z-index: 100;
+      max-height: 260px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .suggestions.hidden { display: none; }
+    .suggestion-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+    .suggestion-item:hover { background: var(--green-light); }
+    .suggestion-item .cat {
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* Add form */
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+    }
+    .add-form .food-preview {
+      flex: 1;
+      font-size: 0.85rem;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+    .add-form .food-preview strong { color: var(--text); }
+    .add-form input[type=number] {
+      width: 90px;
+      padding: 8px 10px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      text-align: right;
+    }
+    .add-form input[type=number]:focus { border-color: var(--green-mid); }
+    .add-form .unit { font-size: 0.85rem; color: var(--muted); }
+    .btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-add { background: var(--green); color: #fff; }
+    .btn-add:disabled { background: #ccc; cursor: default; opacity: 1; }
+
+    /* Food list */
+    .food-list { margin-top: 4px; }
+    .food-list-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 30px 0;
+    }
+    .food-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .food-item:last-child { border-bottom: none; }
+    .food-item .name { flex: 1; font-weight: 500; }
+    .food-item .amount-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .food-item .amount-ctrl input {
+      width: 72px;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      text-align: right;
+      outline: none;
+    }
+    .food-item .amount-ctrl input:focus { border-color: var(--green-mid); }
+    .food-item .kcal { color: var(--muted); font-size: 0.8rem; min-width: 60px; text-align: right; }
+    .food-item .del {
+      background: none;
+      border: none;
+      color: #bbb;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 2px 4px;
+      line-height: 1;
+    }
+    .food-item .del:hover { color: var(--danger); }
+
+    /* Nutrition result */
+    .result-card {
+      grid-column: 1 / -1;
+    }
+    .nutrient-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .nutrient-row {
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+    .nutrient-row .label-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+    }
+    .nutrient-row .label { font-weight: 500; }
+    .nutrient-row .value { font-weight: 700; color: var(--green); }
+    .nutrient-row .value.warn { color: var(--warn); }
+    .nutrient-row .value.danger { color: var(--danger); }
+    .bar-bg {
+      height: 6px;
+      background: #dce8dc;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--green-mid);
+      transition: width 0.4s ease;
+      min-width: 0;
+    }
+    .bar-fill.warn { background: var(--warn); }
+    .bar-fill.danger { background: var(--danger); }
+
+    .energy-banner {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      background: var(--green-light);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+    }
+    .energy-banner .big { font-size: 2.2rem; font-weight: 700; color: var(--green); }
+    .energy-banner .unit { font-size: 1rem; color: var(--muted); }
+    .energy-banner .label { font-size: 0.85rem; color: var(--muted); margin-left: 4px; }
+
+    .source-note {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+    <path d="M12 8v4l3 3"/>
+  </svg>
+  <h1>栄養計算アプリ <small>日本食品成分表 八訂（2020年）準拠</small></h1>
+</header>
+
+<div class="container">
+  <!-- Left: Search & Add -->
+  <div class="card">
+    <h2>食材を追加</h2>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="食材名を入力（例：鶏むね、ほうれん草…）" autocomplete="off">
+      <div class="suggestions hidden" id="suggestions"></div>
+    </div>
+    <div class="add-form">
+      <div class="food-preview" id="selectedPreview">食材を選択してください</div>
+      <input type="number" id="amountInput" min="1" max="2000" value="100" step="1">
+      <span class="unit">g</span>
+      <button class="btn btn-add" id="addBtn" disabled>追加</button>
+    </div>
+  </div>
+
+  <!-- Right: Food list -->
+  <div class="card">
+    <h2>食材リスト</h2>
+    <div class="food-list" id="foodList">
+      <div class="food-list-empty">まだ食材が追加されていません</div>
+    </div>
+  </div>
+
+  <!-- Bottom: Nutrition result -->
+  <div class="card result-card">
+    <h2>栄養計算結果</h2>
+    <div id="resultArea">
+      <div style="text-align:center;color:var(--muted);padding:30px 0;font-size:0.9rem;">
+        食材を追加すると栄養素が表示されます
+      </div>
+    </div>
+    <p class="source-note">出典：文部科学省「日本食品標準成分表2020年版（八訂）」</p>
+  </div>
+</div>
+
+<script>
+const DRI = {
+  energy_kcal:   2000,
+  protein_g:     65,
+  fat_g:         65,
+  carb_g:        260,
+  fiber_g:       21,
+  salt_g:        7.5,
+  calcium_mg:    800,
+  iron_mg:       10.5,
+  vitamin_a_ug:  900,
+  vitamin_b1_mg: 1.4,
+  vitamin_b2_mg: 1.6,
+  vitamin_c_mg:  100,
+  vitamin_d_ug:  15,
+};
+
+let selectedFood = null;
+let foodItems = [];
+let debounceTimer = null;
+let nutrients = [];
+
+async function init() {
+  const res = await fetch('/api/nutrients');
+  nutrients = await res.json();
+}
+
+const searchInput = document.getElementById('searchInput');
+const suggestions = document.getElementById('suggestions');
+const selectedPreview = document.getElementById('selectedPreview');
+const amountInput = document.getElementById('amountInput');
+const addBtn = document.getElementById('addBtn');
+const foodList = document.getElementById('foodList');
+const resultArea = document.getElementById('resultArea');
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(doSearch, 200);
+});
+
+searchInput.addEventListener('focus', () => {
+  if (suggestions.children.length > 0) suggestions.classList.remove('hidden');
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) suggestions.classList.add('hidden');
+});
+
+async function doSearch() {
+  const q = searchInput.value.trim();
+  if (!q) { suggestions.classList.add('hidden'); return; }
+  const res = await fetch(`/api/foods?q=${encodeURIComponent(q)}`);
+  const items = await res.json();
+  suggestions.innerHTML = '';
+  if (items.length === 0) {
+    suggestions.classList.add('hidden');
+    return;
+  }
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    div.innerHTML = `<span>${item.name}</span><span class="cat">${item.category}</span>`;
+    div.addEventListener('click', () => selectFood(item));
+    suggestions.appendChild(div);
+  });
+  suggestions.classList.remove('hidden');
+}
+
+function selectFood(food) {
+  selectedFood = food;
+  searchInput.value = food.name;
+  suggestions.classList.add('hidden');
+  selectedPreview.innerHTML = `<strong>${food.name}</strong> <span style="color:var(--muted);font-size:0.8rem">${food.category}</span>`;
+  addBtn.disabled = false;
+  amountInput.focus();
+}
+
+addBtn.addEventListener('click', () => {
+  if (!selectedFood) return;
+  const amount = parseFloat(amountInput.value);
+  if (!amount || amount <= 0) return;
+  const existing = foodItems.find(i => i.food_id === selectedFood.id);
+  if (existing) {
+    existing.amount += amount;
+  } else {
+    foodItems.push({ food_id: selectedFood.id, name: selectedFood.name, amount });
+  }
+  searchInput.value = '';
+  selectedFood = null;
+  selectedPreview.textContent = '食材を選択してください';
+  addBtn.disabled = true;
+  amountInput.value = 100;
+  renderList();
+  calculate();
+});
+
+amountInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addBtn.click();
+});
+
+function renderList() {
+  if (foodItems.length === 0) {
+    foodList.innerHTML = '<div class="food-list-empty">まだ食材が追加されていません</div>';
+    return;
+  }
+  foodList.innerHTML = '';
+  foodItems.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'food-item';
+    div.innerHTML = `
+      <span class="name">${item.name}</span>
+      <div class="amount-ctrl">
+        <input type="number" value="${item.amount}" min="1" max="5000" step="1" data-idx="${idx}">
+        <span class="unit" style="font-size:0.8rem;color:var(--muted)">g</span>
+      </div>
+      <span class="kcal" id="kcal-${idx}">—</span>
+      <button class="del" data-idx="${idx}" title="削除">×</button>
+    `;
+    foodList.appendChild(div);
+  });
+
+  foodList.querySelectorAll('input[type=number]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx = parseInt(inp.dataset.idx);
+      const v = parseFloat(inp.value);
+      if (v > 0) { foodItems[idx].amount = v; calculate(); }
+    });
+  });
+  foodList.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      foodItems.splice(parseInt(btn.dataset.idx), 1);
+      renderList();
+      calculate();
+    });
+  });
+}
+
+async function calculate() {
+  if (foodItems.length === 0) {
+    resultArea.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:0.9rem;">食材を追加すると栄養素が表示されます</div>';
+    return;
+  }
+  const res = await fetch('/api/calculate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: foodItems }),
+  });
+  const data = await res.json();
+
+  // Update per-item kcal
+  data.items.forEach((item, idx) => {
+    const el = document.getElementById(`kcal-${idx}`);
+    if (el) el.textContent = `${item.nutrition.energy_kcal} kcal`;
+  });
+
+  const t = data.totals;
+
+  let html = `
+    <div class="energy-banner">
+      <span class="big">${t.energy_kcal.toFixed(0)}</span>
+      <span class="unit">kcal</span>
+      <span class="label">合計エネルギー（目安 ${DRI.energy_kcal} kcal/日）</span>
+    </div>
+    <div class="nutrient-grid">
+  `;
+
+  nutrients.forEach(n => {
+    if (n.key === 'energy_kcal') return;
+    const val = t[n.key] ?? 0;
+    const ref = DRI[n.key] ?? 1;
+    const pct = Math.min((val / ref) * 100, 150);
+    const cls = pct > 120 ? 'danger' : pct > 90 ? 'warn' : '';
+    html += `
+      <div class="nutrient-row">
+        <div class="label-line">
+          <span class="label">${n.label}</span>
+          <span class="value ${cls}">${val} ${n.unit}</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill ${cls}" style="width:${Math.max(pct,0).toFixed(1)}%"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  resultArea.innerHTML = html;
+}
+
+init();
+</script>
+</body>
+</html>

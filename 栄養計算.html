@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>栄養計算アプリ — 日本食品成分表 八訂</title>
+  <style>
+    :root {
+      --green: #2e7d51;
+      --green-light: #e8f5ee;
+      --green-mid: #4caf7a;
+      --bg: #f4f6f4;
+      --card: #ffffff;
+      --text: #1a2e1a;
+      --muted: #6b7b6b;
+      --border: #d4e0d4;
+      --warn: #e07a00;
+      --danger: #c0392b;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: var(--green);
+      color: #fff;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header small { font-size: 0.75rem; opacity: 0.8; margin-left: 4px; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 760px) { .container { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .card h2 {
+      font-size: 1rem;
+      color: var(--green);
+      margin-bottom: 14px;
+      border-bottom: 2px solid var(--green-light);
+      padding-bottom: 8px;
+    }
+    .search-wrap { position: relative; }
+    .search-wrap input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--green-mid); }
+    .suggestions {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0 0 8px 8px;
+      z-index: 100;
+      max-height: 260px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .suggestions.hidden { display: none; }
+    .suggestion-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+    .suggestion-item:hover { background: var(--green-light); }
+    .suggestion-item .cat {
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .add-form .food-preview {
+      flex: 1;
+      min-width: 120px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+    .add-form .food-preview strong { color: var(--text); }
+    .add-form input[type=number] {
+      width: 90px;
+      padding: 8px 10px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      text-align: right;
+    }
+    .add-form input[type=number]:focus { border-color: var(--green-mid); }
+    .add-form .unit { font-size: 0.85rem; color: var(--muted); }
+    .btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-add { background: var(--green); color: #fff; }
+    .btn-add:disabled { background: #ccc; cursor: default; opacity: 1; }
+    .food-list { margin-top: 4px; }
+    .food-list-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 30px 0;
+    }
+    .food-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .food-item:last-child { border-bottom: none; }
+    .food-item .name { flex: 1; font-weight: 500; }
+    .food-item .amount-ctrl { display: flex; align-items: center; gap: 6px; }
+    .food-item .amount-ctrl input {
+      width: 72px;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      text-align: right;
+      outline: none;
+    }
+    .food-item .amount-ctrl input:focus { border-color: var(--green-mid); }
+    .food-item .kcal { color: var(--muted); font-size: 0.8rem; min-width: 60px; text-align: right; }
+    .food-item .del {
+      background: none;
+      border: none;
+      color: #bbb;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 2px 4px;
+      line-height: 1;
+    }
+    .food-item .del:hover { color: var(--danger); }
+    .result-card { grid-column: 1 / -1; }
+    .nutrient-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .nutrient-row {
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+    .nutrient-row .label-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+    }
+    .nutrient-row .label { font-weight: 500; }
+    .nutrient-row .value { font-weight: 700; color: var(--green); }
+    .nutrient-row .value.warn { color: var(--warn); }
+    .nutrient-row .value.danger { color: var(--danger); }
+    .bar-bg { height: 6px; background: #dce8dc; border-radius: 3px; overflow: hidden; }
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--green-mid);
+      transition: width 0.4s ease;
+    }
+    .bar-fill.warn { background: var(--warn); }
+    .bar-fill.danger { background: var(--danger); }
+    .energy-banner {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      background: var(--green-light);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .energy-banner .big { font-size: 2.2rem; font-weight: 700; color: var(--green); }
+    .energy-banner .unit { font-size: 1rem; color: var(--muted); }
+    .energy-banner .label { font-size: 0.85rem; color: var(--muted); margin-left: 4px; }
+    .source-note {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+    .reset-btn {
+      float: right;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .reset-btn:hover { color: var(--danger); border-color: var(--danger); }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+    <path d="M12 8v4l3 3"/>
+  </svg>
+  <h1>栄養計算アプリ <small>日本食品成分表 八訂（2020年）準拠</small></h1>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>食材を追加</h2>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="食材名を入力（例：鶏むね、ほうれん草…）" autocomplete="off">
+      <div class="suggestions hidden" id="suggestions"></div>
+    </div>
+    <div class="add-form">
+      <div class="food-preview" id="selectedPreview">食材を選択してください</div>
+      <input type="number" id="amountInput" min="1" max="5000" value="100" step="1">
+      <span class="unit">g</span>
+      <button class="btn btn-add" id="addBtn" disabled>追加</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>食材リスト <button class="reset-btn" id="resetBtn">リセット</button></h2>
+    <div class="food-list" id="foodList">
+      <div class="food-list-empty">まだ食材が追加されていません</div>
+    </div>
+  </div>
+
+  <div class="card result-card">
+    <h2>栄養計算結果</h2>
+    <div id="resultArea">
+      <div style="text-align:center;color:var(--muted);padding:30px 0;font-size:0.9rem;">
+        食材を追加すると栄養素が表示されます
+      </div>
+    </div>
+    <p class="source-note">出典：文部科学省「日本食品標準成分表2020年版（八訂）」</p>
+  </div>
+</div>
+
+<script>
+// ─── 食品データ（日本食品成分表 八訂 2020年版） ───────────────────────
+// 各栄養素は可食部100gあたりの値
+// energy_kcal／protein_g／fat_g／carb_g／fiber_g／salt_g
+// calcium_mg／iron_mg／vitamin_a_ug／vitamin_b1_mg／vitamin_b2_mg／vitamin_c_mg／vitamin_d_ug
+
+const FOODS = [
+  // 穀類
+  {id:1, name:"精白米（炊いたもの）", cat:"穀類", n:{e:168,p:2.5,f:0.3,c:37.1,fi:0.3,s:0.0,ca:3,fe:0.1,va:0,b1:0.02,b2:0.01,vc:0,vd:0.0}},
+  {id:2, name:"精白米（生）", cat:"穀類", n:{e:342,p:6.1,f:0.9,c:77.6,fi:0.5,s:0.0,ca:5,fe:0.8,va:0,b1:0.08,b2:0.02,vc:0,vd:0.0}},
+  {id:3, name:"食パン", cat:"穀類", n:{e:264,p:9.3,f:4.4,c:49.0,fi:2.3,s:1.2,ca:29,fe:0.7,va:0,b1:0.07,b2:0.06,vc:0,vd:0.0}},
+  {id:4, name:"うどん（ゆで）", cat:"穀類", n:{e:105,p:2.6,f:0.4,c:21.6,fi:0.8,s:0.3,ca:9,fe:0.2,va:0,b1:0.02,b2:0.01,vc:0,vd:0.0}},
+  {id:5, name:"そば（ゆで）", cat:"穀類", n:{e:132,p:4.8,f:1.0,c:26.0,fi:2.0,s:0.0,ca:10,fe:0.8,va:0,b1:0.06,b2:0.02,vc:0,vd:0.0}},
+  {id:6, name:"スパゲッティ（ゆで）", cat:"穀類", n:{e:165,p:5.8,f:0.9,c:32.2,fi:1.5,s:0.0,ca:7,fe:0.6,va:0,b1:0.02,b2:0.01,vc:0,vd:0.0}},
+  {id:7, name:"もち", cat:"穀類", n:{e:235,p:4.7,f:0.6,c:50.8,fi:0.5,s:0.0,ca:4,fe:0.2,va:0,b1:0.03,b2:0.01,vc:0,vd:0.0}},
+  {id:8, name:"コーンフレーク", cat:"穀類", n:{e:381,p:7.8,f:1.7,c:83.6,fi:2.4,s:1.3,ca:3,fe:1.2,va:0,b1:0.50,b2:0.50,vc:0,vd:0.0}},
+  // 野菜類
+  {id:20, name:"キャベツ", cat:"野菜類", n:{e:23,p:1.3,f:0.2,c:5.2,fi:1.8,s:0.0,ca:43,fe:0.3,va:5,b1:0.04,b2:0.03,vc:41,vd:0.0}},
+  {id:21, name:"にんじん（生）", cat:"野菜類", n:{e:39,p:0.7,f:0.2,c:9.3,fi:2.8,s:0.0,ca:28,fe:0.2,va:720,b1:0.07,b2:0.06,vc:6,vd:0.0}},
+  {id:22, name:"トマト", cat:"野菜類", n:{e:20,p:0.7,f:0.1,c:4.7,fi:1.0,s:0.0,ca:7,fe:0.2,va:45,b1:0.05,b2:0.02,vc:15,vd:0.0}},
+  {id:23, name:"ほうれんそう（生）", cat:"野菜類", n:{e:20,p:2.2,f:0.4,c:3.1,fi:2.8,s:0.0,ca:49,fe:2.0,va:350,b1:0.11,b2:0.20,vc:35,vd:0.0}},
+  {id:24, name:"たまねぎ（生）", cat:"野菜類", n:{e:37,p:1.0,f:0.1,c:8.8,fi:1.5,s:0.0,ca:17,fe:0.2,va:1,b1:0.03,b2:0.01,vc:8,vd:0.0}},
+  {id:25, name:"じゃがいも（生）", cat:"野菜類", n:{e:76,p:1.8,f:0.1,c:17.3,fi:1.3,s:0.0,ca:4,fe:0.4,va:0,b1:0.09,b2:0.03,vc:35,vd:0.0}},
+  {id:26, name:"大根（生）", cat:"野菜類", n:{e:18,p:0.5,f:0.1,c:4.1,fi:1.4,s:0.0,ca:24,fe:0.2,va:0,b1:0.02,b2:0.01,vc:12,vd:0.0}},
+  {id:27, name:"なす（生）", cat:"野菜類", n:{e:22,p:1.1,f:0.1,c:5.1,fi:2.2,s:0.0,ca:18,fe:0.3,va:8,b1:0.05,b2:0.05,vc:4,vd:0.0}},
+  {id:28, name:"ブロッコリー（生）", cat:"野菜類", n:{e:37,p:4.3,f:0.5,c:6.6,fi:4.4,s:0.0,ca:50,fe:1.3,va:75,b1:0.14,b2:0.23,vc:140,vd:0.0}},
+  {id:29, name:"きゅうり（生）", cat:"野菜類", n:{e:14,p:1.0,f:0.1,c:3.0,fi:1.1,s:0.0,ca:26,fe:0.3,va:28,b1:0.03,b2:0.03,vc:14,vd:0.0}},
+  {id:30, name:"ねぎ（根深ねぎ）", cat:"野菜類", n:{e:34,p:1.4,f:0.1,c:8.3,fi:2.5,s:0.0,ca:36,fe:0.3,va:83,b1:0.05,b2:0.04,vc:14,vd:0.0}},
+  {id:31, name:"もやし（緑豆）", cat:"野菜類", n:{e:15,p:1.7,f:0.1,c:2.6,fi:1.3,s:0.0,ca:10,fe:0.3,va:1,b1:0.04,b2:0.05,vc:8,vd:0.0}},
+  {id:32, name:"しいたけ（生）", cat:"野菜類", n:{e:25,p:3.0,f:0.3,c:6.4,fi:4.2,s:0.0,ca:4,fe:0.4,va:0,b1:0.10,b2:0.22,vc:0,vd:0.3}},
+  {id:33, name:"長いも（生）", cat:"野菜類", n:{e:65,p:2.2,f:0.3,c:13.9,fi:1.0,s:0.0,ca:17,fe:0.4,va:0,b1:0.10,b2:0.02,vc:6,vd:0.0}},
+  {id:34, name:"さつまいも（生）", cat:"野菜類", n:{e:132,p:1.2,f:0.2,c:31.9,fi:2.2,s:0.0,ca:40,fe:0.6,va:1,b1:0.11,b2:0.04,vc:29,vd:0.0}},
+  {id:35, name:"かぼちゃ（生）", cat:"野菜類", n:{e:91,p:1.9,f:0.3,c:20.6,fi:3.5,s:0.0,ca:15,fe:0.5,va:330,b1:0.07,b2:0.09,vc:43,vd:0.0}},
+  {id:36, name:"ピーマン（生）", cat:"野菜類", n:{e:22,p:0.9,f:0.2,c:5.1,fi:2.3,s:0.0,ca:11,fe:0.4,va:33,b1:0.03,b2:0.03,vc:76,vd:0.0}},
+  {id:37, name:"レタス（生）", cat:"野菜類", n:{e:12,p:0.6,f:0.1,c:2.8,fi:1.1,s:0.0,ca:19,fe:0.3,va:20,b1:0.05,b2:0.03,vc:5,vd:0.0}},
+  {id:38, name:"ごぼう（生）", cat:"野菜類", n:{e:65,p:1.8,f:0.1,c:15.4,fi:5.7,s:0.0,ca:46,fe:0.7,va:0,b1:0.05,b2:0.04,vc:3,vd:0.0}},
+  {id:39, name:"えだまめ（生）", cat:"野菜類", n:{e:135,p:11.5,f:6.1,c:8.8,fi:5.0,s:0.0,ca:58,fe:2.7,va:45,b1:0.31,b2:0.13,vc:27,vd:0.0}},
+  // 果実類
+  {id:50, name:"りんご（生）", cat:"果実類", n:{e:61,p:0.2,f:0.3,c:16.2,fi:1.9,s:0.0,ca:4,fe:0.1,va:1,b1:0.02,b2:0.01,vc:6,vd:0.0}},
+  {id:51, name:"バナナ（生）", cat:"果実類", n:{e:93,p:1.1,f:0.2,c:22.5,fi:1.1,s:0.0,ca:6,fe:0.3,va:5,b1:0.05,b2:0.04,vc:16,vd:0.0}},
+  {id:52, name:"みかん（生）", cat:"果実類", n:{e:46,p:0.7,f:0.1,c:12.0,fi:1.0,s:0.0,ca:21,fe:0.1,va:84,b1:0.10,b2:0.03,vc:32,vd:0.0}},
+  {id:53, name:"いちご（生）", cat:"果実類", n:{e:34,p:0.9,f:0.1,c:8.5,fi:1.4,s:0.0,ca:17,fe:0.3,va:1,b1:0.03,b2:0.02,vc:62,vd:0.0}},
+  {id:54, name:"ぶどう（生）", cat:"果実類", n:{e:69,p:0.4,f:0.1,c:17.9,fi:0.5,s:0.0,ca:6,fe:0.1,va:2,b1:0.04,b2:0.01,vc:2,vd:0.0}},
+  {id:55, name:"もも（生）", cat:"果実類", n:{e:43,p:0.6,f:0.1,c:10.9,fi:1.3,s:0.0,ca:4,fe:0.1,va:3,b1:0.01,b2:0.01,vc:8,vd:0.0}},
+  {id:56, name:"キウイフルーツ（生）", cat:"果実類", n:{e:59,p:1.0,f:0.1,c:14.9,fi:2.6,s:0.0,ca:33,fe:0.3,va:4,b1:0.01,b2:0.02,vc:71,vd:0.0}},
+  // 肉類
+  {id:70, name:"鶏むね肉（皮なし・生）", cat:"肉類", n:{e:116,p:23.3,f:1.9,c:0.0,fi:0.0,s:0.1,ca:4,fe:0.3,va:6,b1:0.10,b2:0.10,vc:3,vd:0.2}},
+  {id:71, name:"鶏もも肉（皮なし・生）", cat:"肉類", n:{e:127,p:19.0,f:5.0,c:0.0,fi:0.0,s:0.2,ca:6,fe:0.6,va:16,b1:0.10,b2:0.15,vc:3,vd:0.1}},
+  {id:72, name:"豚ロース肉（生）", cat:"肉類", n:{e:248,p:19.3,f:19.2,c:0.2,fi:0.0,s:0.1,ca:4,fe:0.6,va:4,b1:0.80,b2:0.23,vc:1,vd:0.5}},
+  {id:73, name:"豚バラ肉（生）", cat:"肉類", n:{e:366,p:14.4,f:35.4,c:0.1,fi:0.0,s:0.1,ca:4,fe:0.6,va:3,b1:0.54,b2:0.14,vc:1,vd:0.6}},
+  {id:74, name:"豚もも肉（生）", cat:"肉類", n:{e:171,p:20.5,f:9.3,c:0.2,fi:0.0,s:0.1,ca:4,fe:0.9,va:2,b1:0.96,b2:0.22,vc:2,vd:0.7}},
+  {id:75, name:"牛もも肉（輸入・生）", cat:"肉類", n:{e:182,p:21.2,f:10.7,c:0.5,fi:0.0,s:0.1,ca:4,fe:2.7,va:5,b1:0.09,b2:0.22,vc:1,vd:0.5}},
+  {id:76, name:"牛バラ肉（生）", cat:"肉類", n:{e:426,p:11.0,f:44.0,c:0.1,fi:0.0,s:0.1,ca:4,fe:0.8,va:4,b1:0.04,b2:0.10,vc:1,vd:0.5}},
+  {id:77, name:"鶏ひき肉（生）", cat:"肉類", n:{e:186,p:17.5,f:12.0,c:0.0,fi:0.0,s:0.2,ca:10,fe:0.8,va:16,b1:0.08,b2:0.18,vc:3,vd:0.4}},
+  {id:78, name:"豚ひき肉（生）", cat:"肉類", n:{e:221,p:17.7,f:17.2,c:0.0,fi:0.0,s:0.1,ca:6,fe:1.0,va:4,b1:0.72,b2:0.20,vc:1,vd:0.5}},
+  {id:79, name:"牛ひき肉（生）", cat:"肉類", n:{e:272,p:17.1,f:21.1,c:0.5,fi:0.0,s:0.1,ca:6,fe:2.4,va:5,b1:0.07,b2:0.18,vc:1,vd:0.5}},
+  {id:80, name:"ウインナーソーセージ", cat:"肉類", n:{e:321,p:11.5,f:30.6,c:3.3,fi:0.0,s:1.9,ca:9,fe:0.8,va:6,b1:0.18,b2:0.10,vc:11,vd:0.5}},
+  {id:81, name:"ベーコン", cat:"肉類", n:{e:405,p:12.9,f:39.1,c:0.3,fi:0.0,s:2.0,ca:5,fe:0.5,va:12,b1:0.47,b2:0.10,vc:23,vd:0.3}},
+  {id:82, name:"ロースハム", cat:"肉類", n:{e:211,p:16.5,f:14.5,c:2.0,fi:0.0,s:2.5,ca:5,fe:0.6,va:7,b1:0.67,b2:0.19,vc:50,vd:0.3}},
+  // 魚介類
+  {id:100, name:"さけ（シロサケ・生）", cat:"魚介類", n:{e:133,p:22.3,f:4.1,c:0.1,fi:0.0,s:0.2,ca:14,fe:0.5,va:11,b1:0.15,b2:0.21,vc:1,vd:32.0}},
+  {id:101, name:"まぐろ（本まぐろ・赤身・生）", cat:"魚介類", n:{e:125,p:26.4,f:1.4,c:0.1,fi:0.0,s:0.1,ca:5,fe:1.1,va:83,b1:0.10,b2:0.05,vc:2,vd:5.0}},
+  {id:102, name:"さば（生）", cat:"魚介類", n:{e:247,p:20.6,f:16.8,c:0.3,fi:0.0,s:0.3,ca:6,fe:1.2,va:37,b1:0.21,b2:0.31,vc:2,vd:5.1}},
+  {id:103, name:"まあじ（生）", cat:"魚介類", n:{e:126,p:20.7,f:4.5,c:0.1,fi:0.0,s:0.3,ca:66,fe:0.6,va:12,b1:0.13,b2:0.20,vc:0,vd:8.9}},
+  {id:104, name:"いわし（まいわし・生）", cat:"魚介類", n:{e:156,p:19.2,f:9.2,c:0.2,fi:0.0,s:0.3,ca:74,fe:2.1,va:8,b1:0.03,b2:0.39,vc:0,vd:32.0}},
+  {id:105, name:"ぶり（生）", cat:"魚介類", n:{e:257,p:21.4,f:17.6,c:0.3,fi:0.0,s:0.1,ca:5,fe:1.3,va:50,b1:0.23,b2:0.36,vc:2,vd:8.0}},
+  {id:106, name:"えび（ブラックタイガー・生）", cat:"魚介類", n:{e:82,p:18.4,f:0.3,c:0.3,fi:0.0,s:0.5,ca:67,fe:0.5,va:0,b1:0.07,b2:0.02,vc:0,vd:0.0}},
+  {id:107, name:"いか（するめいか・生）", cat:"魚介類", n:{e:88,p:17.9,f:0.8,c:0.4,fi:0.0,s:0.5,ca:11,fe:0.1,va:13,b1:0.05,b2:0.04,vc:1,vd:0.0}},
+  {id:108, name:"たこ（まだこ・生）", cat:"魚介類", n:{e:76,p:16.4,f:0.7,c:0.1,fi:0.0,s:0.7,ca:16,fe:0.6,va:7,b1:0.03,b2:0.09,vc:0,vd:0.0}},
+  {id:109, name:"しらす干し（半乾燥品）", cat:"魚介類", n:{e:113,p:23.1,f:2.3,c:0.4,fi:0.0,s:3.2,ca:520,fe:0.8,va:52,b1:0.05,b2:0.12,vc:0,vd:0.0}},
+  {id:110, name:"ツナ缶（水煮）", cat:"魚介類", n:{e:71,p:16.0,f:0.7,c:0.1,fi:0.0,s:0.4,ca:10,fe:0.3,va:0,b1:0.02,b2:0.04,vc:0,vd:0.0}},
+  {id:111, name:"さば水煮缶", cat:"魚介類", n:{e:190,p:20.9,f:10.7,c:0.2,fi:0.0,s:0.9,ca:260,fe:2.0,va:37,b1:0.08,b2:0.28,vc:0,vd:11.0}},
+  {id:112, name:"かまぼこ（蒸し）", cat:"魚介類", n:{e:95,p:12.0,f:0.9,c:9.7,fi:0.0,s:2.5,ca:25,fe:0.3,va:0,b1:0.01,b2:0.03,vc:0,vd:0.0}},
+  {id:113, name:"ちくわ", cat:"魚介類", n:{e:121,p:12.2,f:2.0,c:13.5,fi:0.0,s:2.1,ca:15,fe:0.5,va:0,b1:0.03,b2:0.06,vc:0,vd:0.0}},
+  // 卵類
+  {id:130, name:"鶏卵（全卵・生）", cat:"卵類", n:{e:151,p:12.3,f:10.3,c:0.3,fi:0.0,s:0.4,ca:51,fe:1.8,va:150,b1:0.06,b2:0.43,vc:0,vd:3.8}},
+  // 乳類
+  {id:140, name:"普通牛乳", cat:"乳類", n:{e:67,p:3.3,f:3.8,c:4.8,fi:0.0,s:0.1,ca:110,fe:0.0,va:38,b1:0.04,b2:0.15,vc:1,vd:0.3}},
+  {id:141, name:"ヨーグルト（全脂無糖）", cat:"乳類", n:{e:62,p:3.6,f:3.0,c:4.9,fi:0.0,s:0.1,ca:120,fe:0.1,va:33,b1:0.04,b2:0.14,vc:1,vd:0.0}},
+  {id:142, name:"プロセスチーズ", cat:"乳類", n:{e:339,p:22.7,f:26.0,c:1.3,fi:0.0,s:2.8,ca:630,fe:0.3,va:260,b1:0.03,b2:0.38,vc:0,vd:0.3}},
+  {id:143, name:"バター（有塩）", cat:"乳類", n:{e:745,p:0.6,f:81.0,c:0.2,fi:0.0,s:1.9,ca:15,fe:0.1,va:500,b1:0.01,b2:0.03,vc:0,vd:0.5}},
+  // 豆類
+  {id:150, name:"木綿豆腐", cat:"豆類", n:{e:73,p:7.0,f:4.3,c:1.5,fi:0.4,s:0.1,ca:93,fe:1.5,va:0,b1:0.09,b2:0.04,vc:0,vd:0.0}},
+  {id:151, name:"絹ごし豆腐", cat:"豆類", n:{e:56,p:5.3,f:3.5,c:2.0,fi:0.3,s:0.1,ca:75,fe:1.2,va:0,b1:0.10,b2:0.04,vc:0,vd:0.0}},
+  {id:152, name:"納豆", cat:"豆類", n:{e:200,p:16.5,f:10.0,c:12.1,fi:6.7,s:0.0,ca:90,fe:3.3,va:0,b1:0.07,b2:0.56,vc:0,vd:0.0}},
+  {id:153, name:"大豆（ゆで）", cat:"豆類", n:{e:176,p:14.8,f:9.8,c:9.7,fi:7.0,s:0.0,ca:79,fe:2.2,va:0,b1:0.17,b2:0.08,vc:0,vd:0.0}},
+  {id:154, name:"豆乳（無調整）", cat:"豆類", n:{e:46,p:3.6,f:2.0,c:3.1,fi:0.2,s:0.0,ca:15,fe:1.2,va:0,b1:0.07,b2:0.02,vc:0,vd:0.0}},
+  {id:155, name:"厚揚げ", cat:"豆類", n:{e:150,p:10.7,f:11.3,c:0.2,fi:0.7,s:0.0,ca:240,fe:2.6,va:0,b1:0.08,b2:0.04,vc:0,vd:0.0}},
+  {id:156, name:"油揚げ", cat:"豆類", n:{e:388,p:23.4,f:34.4,c:0.0,fi:1.3,s:0.0,ca:300,fe:3.2,va:0,b1:0.06,b2:0.03,vc:0,vd:0.0}},
+  // 油脂類
+  {id:170, name:"植物油（大豆油）", cat:"油脂類", n:{e:921,p:0.0,f:100.0,c:0.0,fi:0.0,s:0.0,ca:1,fe:0.0,va:0,b1:0.0,b2:0.0,vc:0,vd:0.0}},
+  {id:171, name:"ごま油", cat:"油脂類", n:{e:921,p:0.0,f:100.0,c:0.0,fi:0.0,s:0.0,ca:1,fe:0.1,va:0,b1:0.0,b2:0.0,vc:0,vd:0.0}},
+  {id:172, name:"マヨネーズ", cat:"油脂類", n:{e:703,p:1.4,f:75.3,c:3.6,fi:0.0,s:1.9,ca:17,fe:0.4,va:40,b1:0.02,b2:0.05,vc:0,vd:1.7}},
+  // 調味料類
+  {id:180, name:"こいくちしょうゆ", cat:"調味料類", n:{e:71,p:7.7,f:0.0,c:7.9,fi:0.0,s:14.5,ca:27,fe:1.7,va:0,b1:0.05,b2:0.17,vc:0,vd:0.0}},
+  {id:181, name:"淡色辛みそ", cat:"調味料類", n:{e:198,p:12.5,f:6.0,c:21.9,fi:4.9,s:12.4,ca:100,fe:3.4,va:0,b1:0.03,b2:0.10,vc:0,vd:0.0}},
+  {id:182, name:"上白糖", cat:"調味料類", n:{e:391,p:0.0,f:0.0,c:99.3,fi:0.0,s:0.0,ca:1,fe:0.0,va:0,b1:0.0,b2:0.0,vc:0,vd:0.0}},
+  {id:183, name:"食塩", cat:"調味料類", n:{e:0,p:0.0,f:0.0,c:0.0,fi:0.0,s:99.5,ca:22,fe:0.0,va:0,b1:0.0,b2:0.0,vc:0,vd:0.0}},
+  {id:184, name:"本みりん", cat:"調味料類", n:{e:241,p:0.3,f:0.1,c:43.2,fi:0.0,s:0.0,ca:4,fe:0.1,va:0,b1:0.0,b2:0.0,vc:0,vd:0.0}},
+  {id:185, name:"穀物酢", cat:"調味料類", n:{e:25,p:0.1,f:0.0,c:2.4,fi:0.0,s:0.0,ca:1,fe:0.0,va:0,b1:0.0,b2:0.0,vc:0,vd:0.0}},
+  {id:186, name:"トマトケチャップ", cat:"調味料類", n:{e:119,p:1.6,f:0.2,c:29.9,fi:1.7,s:3.1,ca:18,fe:0.5,va:48,b1:0.06,b2:0.05,vc:18,vd:0.0}},
+  {id:187, name:"中濃ソース", cat:"調味料類", n:{e:132,p:1.0,f:0.1,c:33.1,fi:0.8,s:4.9,ca:28,fe:0.7,va:0,b1:0.04,b2:0.04,vc:0,vd:0.0}},
+  {id:188, name:"めんつゆ（ストレート）", cat:"調味料類", n:{e:44,p:2.2,f:0.0,c:8.7,fi:0.0,s:3.1,ca:5,fe:0.2,va:0,b1:0.02,b2:0.04,vc:0,vd:0.0}},
+  // 種実類・藻類
+  {id:201, name:"ごま（いり）", cat:"種実類", n:{e:605,p:20.3,f:54.2,c:18.5,fi:10.8,s:0.0,ca:1200,fe:9.9,va:0,b1:0.49,b2:0.23,vc:0,vd:0.0}},
+  {id:202, name:"くるみ（いり）", cat:"種実類", n:{e:713,p:14.6,f:68.8,c:11.7,fi:7.5,s:0.0,ca:85,fe:2.6,va:0,b1:0.26,b2:0.15,vc:0,vd:0.0}},
+  {id:203, name:"アーモンド（いり・無塩）", cat:"種実類", n:{e:608,p:20.3,f:54.1,c:19.7,fi:10.1,s:0.0,ca:250,fe:3.7,va:0,b1:0.09,b2:0.95,vc:0,vd:0.0}},
+  {id:210, name:"わかめ（生）", cat:"藻類", n:{e:24,p:1.9,f:0.2,c:5.6,fi:3.6,s:0.6,ca:100,fe:0.7,va:53,b1:0.07,b2:0.18,vc:15,vd:0.0}},
+  {id:211, name:"焼きのり", cat:"藻類", n:{e:297,p:41.4,f:3.7,c:44.3,fi:36.0,s:1.3,ca:280,fe:11.4,va:2500,b1:0.69,b2:2.33,vc:210,vd:0.0}},
+];
+
+// 栄養素の定義
+const NUTRIENTS = [
+  {key:'e',  label:'エネルギー',   unit:'kcal'},
+  {key:'p',  label:'たんぱく質',   unit:'g'},
+  {key:'f',  label:'脂質',         unit:'g'},
+  {key:'c',  label:'炭水化物',     unit:'g'},
+  {key:'fi', label:'食物繊維',     unit:'g'},
+  {key:'s',  label:'食塩相当量',   unit:'g'},
+  {key:'ca', label:'カルシウム',   unit:'mg'},
+  {key:'fe', label:'鉄',           unit:'mg'},
+  {key:'va', label:'ビタミンA',    unit:'μg'},
+  {key:'b1', label:'ビタミンB1',   unit:'mg'},
+  {key:'b2', label:'ビタミンB2',   unit:'mg'},
+  {key:'vc', label:'ビタミンC',    unit:'mg'},
+  {key:'vd', label:'ビタミンD',    unit:'μg'},
+];
+
+// 日本人の食事摂取基準 2020年版（成人目安値・参考値）
+const DRI = {e:2000, p:65, f:65, c:260, fi:21, s:7.5, ca:800, fe:10.5, va:900, b1:1.4, b2:1.6, vc:100, vd:15};
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+
+let selectedFood = null;
+let foodItems = [];
+let debounceTimer = null;
+
+const searchInput  = document.getElementById('searchInput');
+const suggestionsEl = document.getElementById('suggestions');
+const selectedPreview = document.getElementById('selectedPreview');
+const amountInput  = document.getElementById('amountInput');
+const addBtn       = document.getElementById('addBtn');
+const foodListEl   = document.getElementById('foodList');
+const resultArea   = document.getElementById('resultArea');
+const resetBtn     = document.getElementById('resetBtn');
+
+function searchFoods(q) {
+  if (!q) return [];
+  const q2 = q.toLowerCase();
+  return FOODS.filter(f => f.name.includes(q) || f.cat.includes(q) || f.name.toLowerCase().includes(q2)).slice(0, 30);
+}
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    const results = searchFoods(searchInput.value.trim());
+    suggestionsEl.innerHTML = '';
+    if (!results.length) { suggestionsEl.classList.add('hidden'); return; }
+    results.forEach(food => {
+      const div = document.createElement('div');
+      div.className = 'suggestion-item';
+      div.innerHTML = `<span>${food.name}</span><span class="cat">${food.cat}</span>`;
+      div.addEventListener('click', () => selectFood(food));
+      suggestionsEl.appendChild(div);
+    });
+    suggestionsEl.classList.remove('hidden');
+  }, 150);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) suggestionsEl.classList.add('hidden');
+});
+
+function selectFood(food) {
+  selectedFood = food;
+  searchInput.value = food.name;
+  suggestionsEl.classList.add('hidden');
+  selectedPreview.innerHTML = `<strong>${food.name}</strong> <span style="color:var(--muted);font-size:0.8rem">${food.cat}</span>`;
+  addBtn.disabled = false;
+  amountInput.focus();
+  amountInput.select();
+}
+
+addBtn.addEventListener('click', addFood);
+amountInput.addEventListener('keydown', e => { if (e.key === 'Enter') addFood(); });
+
+function addFood() {
+  if (!selectedFood) return;
+  const amount = parseFloat(amountInput.value);
+  if (!amount || amount <= 0) return;
+  const existing = foodItems.find(i => i.id === selectedFood.id);
+  if (existing) {
+    existing.amount += amount;
+  } else {
+    foodItems.push({ id: selectedFood.id, name: selectedFood.name, amount });
+  }
+  searchInput.value = '';
+  selectedFood = null;
+  selectedPreview.textContent = '食材を選択してください';
+  addBtn.disabled = true;
+  amountInput.value = 100;
+  renderList();
+  calculate();
+  searchInput.focus();
+}
+
+resetBtn.addEventListener('click', () => {
+  if (foodItems.length === 0) return;
+  if (confirm('食材リストをすべてクリアしますか？')) {
+    foodItems = [];
+    renderList();
+    calculate();
+  }
+});
+
+function renderList() {
+  if (!foodItems.length) {
+    foodListEl.innerHTML = '<div class="food-list-empty">まだ食材が追加されていません</div>';
+    return;
+  }
+  foodListEl.innerHTML = '';
+  foodItems.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'food-item';
+    div.innerHTML = `
+      <span class="name">${item.name}</span>
+      <div class="amount-ctrl">
+        <input type="number" value="${item.amount}" min="1" max="5000" step="1" data-idx="${idx}">
+        <span style="font-size:0.8rem;color:var(--muted)">g</span>
+      </div>
+      <span class="kcal" id="kcal-${idx}"></span>
+      <button class="del" data-idx="${idx}" title="削除">×</button>
+    `;
+    foodListEl.appendChild(div);
+  });
+  foodListEl.querySelectorAll('input[type=number]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const v = parseFloat(inp.value);
+      if (v > 0) { foodItems[parseInt(inp.dataset.idx)].amount = v; calculate(); }
+    });
+  });
+  foodListEl.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      foodItems.splice(parseInt(btn.dataset.idx), 1);
+      renderList();
+      calculate();
+    });
+  });
+}
+
+function calculate() {
+  if (!foodItems.length) {
+    resultArea.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:0.9rem;">食材を追加すると栄養素が表示されます</div>';
+    return;
+  }
+  const totals = {};
+  NUTRIENTS.forEach(n => totals[n.key] = 0);
+
+  const itemResults = foodItems.map(item => {
+    const food = FOODS.find(f => f.id === item.id);
+    if (!food) return null;
+    const ratio = item.amount / 100;
+    const nut = {};
+    NUTRIENTS.forEach(n => {
+      const v = Math.round((food.n[n.key] || 0) * ratio * 10) / 10;
+      nut[n.key] = v;
+      totals[n.key] += v;
+    });
+    return { ...item, nut };
+  }).filter(Boolean);
+
+  NUTRIENTS.forEach(n => { totals[n.key] = Math.round(totals[n.key] * 10) / 10; });
+
+  // Update per-item kcal labels
+  itemResults.forEach((item, idx) => {
+    const el = document.getElementById(`kcal-${idx}`);
+    if (el) el.textContent = `${item.nut.e} kcal`;
+  });
+
+  let html = `
+    <div class="energy-banner">
+      <span class="big">${totals.e.toFixed(0)}</span>
+      <span class="unit">kcal</span>
+      <span class="label">合計エネルギー（目安 ${DRI.e} kcal/日）</span>
+    </div>
+    <div class="nutrient-grid">
+  `;
+  NUTRIENTS.filter(n => n.key !== 'e').forEach(n => {
+    const val = totals[n.key];
+    const ref = DRI[n.key] || 1;
+    const pct = Math.min((val / ref) * 100, 150);
+    const cls = pct > 120 ? 'danger' : pct > 90 ? 'warn' : '';
+    html += `
+      <div class="nutrient-row">
+        <div class="label-line">
+          <span class="label">${n.label}</span>
+          <span class="value ${cls}">${val} ${n.unit}</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill ${cls}" style="width:${Math.max(pct,0).toFixed(1)}%"></div>
+        </div>
+      </div>`;
+  });
+  html += `</div>`;
+  resultArea.innerHTML = html;
+}
+</script>
+</body>
+</html>

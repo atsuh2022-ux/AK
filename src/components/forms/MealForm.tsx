@@ -16,6 +16,7 @@ interface Props {
   showCarbIntake?: boolean
   showCarbSnack?: boolean
   showProteinSource?: boolean
+  showHoshoku?: boolean
 }
 
 const MEAL_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6]
@@ -38,6 +39,7 @@ export function MealForm({
   defaultValues, onNext, onBack,
   showAppetite = true, showMealCount = true, showNutritionBalance = true, showWaterMl = true,
   showMushroomSeaweed = true, showCarbIntake = true, showCarbSnack = true, showProteinSource = true,
+  showHoshoku = false,
 }: Props) {
   const { control, register, setValue, watch, handleSubmit, formState: { errors } } = useForm<MealFormValues>({
     resolver: zodResolver(mealSchema),
@@ -336,6 +338,18 @@ export function MealForm({
           {...register('notes')}
         />
       </div>
+
+      {showHoshoku && (
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">補食（食べた場合は記入してください）</label>
+          <textarea
+            rows={2}
+            placeholder="例: おにぎり1個、バナナ1本"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            {...register('hoshoku')}
+          />
+        </div>
+      )}
 
       <div className="flex justify-between">
         <Button type="button" variant="secondary" onClick={onBack}>← 戻る</Button>

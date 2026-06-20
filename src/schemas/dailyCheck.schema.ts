@@ -44,6 +44,7 @@ export const mealSchema = z.object({
   protein_dinner_bean: z.boolean().optional(),
   protein_dinner_egg: z.boolean().optional(),
   notes: z.string().optional(),
+  hoshoku: z.string().optional(),
 })
 
 export type SubjectiveFormValues = z.infer<typeof subjectiveSchema>

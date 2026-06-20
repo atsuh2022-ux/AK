@@ -5,8 +5,8 @@ import type { Profile, UserRole } from '@/types/app.types'
 const IS_DEMO_ENV = import.meta.env.VITE_SUPABASE_URL?.includes('your-project-id') ?? true
 
 const DEMO_PROFILES: Record<UserRole, Profile> = {
-  athlete: { id: 'mock-athlete-1', role: 'athlete', full_name: '山田 太郎', created_at: '' },
-  coach:   { id: 'mock-coach-1',   role: 'coach',   full_name: '田中 コーチ', created_at: '' },
+  athlete: { id: 'mock-athlete-1', role: 'athlete', full_name: '山田 太郎', created_at: '', show_hoshoku: false },
+  coach:   { id: 'mock-coach-1',   role: 'coach',   full_name: '田中 コーチ', created_at: '', show_hoshoku: false },
 }
 
 interface AuthContextValue {

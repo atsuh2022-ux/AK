@@ -162,6 +162,7 @@ export function DailyCheckWizard({ onSubmit, isPending, existingData }: Props) {
           showCarbIntake={settings.show_carb_intake}
           showCarbSnack={settings.show_carb_snack}
           showProteinSource={settings.show_protein_source}
+          showHoshoku={profile?.show_hoshoku ?? false}
         />
       )}
 

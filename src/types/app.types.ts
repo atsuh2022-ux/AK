@@ -5,6 +5,7 @@ export interface Profile {
   role: UserRole
   full_name: string
   created_at: string
+  show_hoshoku: boolean
 }
 
 export interface SubjectiveCheck {
@@ -71,6 +72,7 @@ export interface MealLog {
   protein_dinner_bean: boolean | null
   protein_dinner_egg: boolean | null
   notes: string | null
+  hoshoku: string | null
   created_at: string
 }
 
@@ -141,5 +143,6 @@ export interface DailyCheckFormData {
     protein_dinner_bean?: boolean
     protein_dinner_egg?: boolean
     notes?: string
+    hoshoku?: string
   }
 }

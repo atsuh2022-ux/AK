@@ -88,6 +88,7 @@ export function useDailyCheck(athleteId: string, date: string) {
         protein_dinner_bean: formData.meal.protein_dinner_bean ?? null,
         protein_dinner_egg: formData.meal.protein_dinner_egg ?? null,
         notes: formData.meal.notes || null,
+        hoshoku: formData.meal.hoshoku || null,
       }
 
       // トレーニング: 削除されたタイプを消し、新しいエントリをinsert/update

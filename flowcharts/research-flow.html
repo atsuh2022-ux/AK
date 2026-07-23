@@ -1,46 +1,32 @@
 <title>脊髄損傷パラアスリート 糖質摂取プロトコル</title>
 <style>
   :root{
-    --paper:#F4F7F5;
+    --paper:#FFFFFF;
     --panel:#FFFFFF;
-    --ink:#22302B;
-    --ink-soft:#5B6D66;
-    --line:#D8E2DE;
-    --teal:#2F7B6E;
-    --teal-soft:#DDEEEA;
-    --coral:#DD6A44;
-    --coral-soft:#FBE2D6;
-    --gold:#C98A22;
-    --gold-soft:#FAECD0;
-    --shadow: 0 1px 2px rgba(34,48,43,.06), 0 6px 16px rgba(34,48,43,.05);
+    --ink:#111111;
+    --ink-soft:#3D3D3D;
+    --line:#1A1A1A;
+    --fill:#EFEFEF;
+    --fill-strong:#111111;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --paper:#141C19;
-      --panel:#1C2623;
-      --ink:#EAF2EE;
-      --ink-soft:#9FB3AC;
-      --line:#2D3936;
-      --teal:#63C1AA;
-      --teal-soft:#20342F;
-      --coral:#EF9670;
-      --coral-soft:#382820;
-      --gold:#E4BA5E;
-      --gold-soft:#382E1B;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.25);
+      --paper:#121212;
+      --panel:#121212;
+      --ink:#F2F2F2;
+      --ink-soft:#C7C7C7;
+      --line:#E4E4E4;
+      --fill:#262626;
+      --fill-strong:#F2F2F2;
     }
   }
   :root[data-theme="dark"]{
-    --paper:#141C19; --panel:#1C2623; --ink:#EAF2EE; --ink-soft:#9FB3AC;
-    --line:#2D3936; --teal:#63C1AA; --teal-soft:#20342F;
-    --coral:#EF9670; --coral-soft:#382820; --gold:#E4BA5E; --gold-soft:#382E1B;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.25);
+    --paper:#121212; --panel:#121212; --ink:#F2F2F2; --ink-soft:#C7C7C7;
+    --line:#E4E4E4; --fill:#262626; --fill-strong:#F2F2F2;
   }
   :root[data-theme="light"]{
-    --paper:#F4F7F5; --panel:#FFFFFF; --ink:#22302B; --ink-soft:#5B6D66;
-    --line:#D8E2DE; --teal:#2F7B6E; --teal-soft:#DDEEEA;
-    --coral:#DD6A44; --coral-soft:#FBE2D6; --gold:#C98A22; --gold-soft:#FAECD0;
-    --shadow: 0 1px 2px rgba(34,48,43,.06), 0 6px 16px rgba(34,48,43,.05);
+    --paper:#FFFFFF; --panel:#FFFFFF; --ink:#111111; --ink-soft:#3D3D3D;
+    --line:#1A1A1A; --fill:#EFEFEF; --fill-strong:#111111;
   }
 
   *{ box-sizing:border-box; }
@@ -48,71 +34,45 @@
     margin:0;
     background:var(--paper);
     color:var(--ink);
-    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP","M PLUS Rounded 1c",sans-serif;
+    font-family:"Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
     font-variant-numeric: tabular-nums;
   }
   .page{
-    max-width:760px;
+    max-width:740px;
     margin:0 auto;
-    padding:48px 24px 64px;
+    padding:40px 24px 48px;
     display:flex;
     flex-direction:column;
     align-items:stretch;
   }
-  header{
-    text-align:center;
-    margin-bottom:36px;
-  }
-  .kicker{
-    font-size:13px;
-    letter-spacing:.12em;
-    color:var(--teal);
-    font-weight:700;
-    margin-bottom:8px;
-  }
-  h1{
-    font-family:"Hiragino Maru Gothic ProN","M PLUS Rounded 1c","Yu Gothic",sans-serif;
-    font-size:clamp(22px,4vw,30px);
-    line-height:1.4;
-    margin:0;
-    text-wrap:balance;
-    font-weight:700;
-  }
-  .sub{
-    margin-top:10px;
-    font-size:14px;
-    color:var(--ink-soft);
-  }
 
   .card{
     background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:20px;
-    box-shadow:var(--shadow);
-    padding:22px 24px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:20px 24px;
   }
   .badge{
-    width:46px; height:46px;
+    width:42px; height:42px;
     border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    font-size:22px;
+    font-size:20px;
     flex:none;
+    background:var(--fill);
+    filter: grayscale(1) contrast(1.05);
   }
-  .badge.teal{ background:var(--teal-soft); }
-  .badge.coral{ background:var(--coral-soft); }
-  .badge.gold{ background:var(--gold-soft); }
 
   .card-head{
     display:flex;
     align-items:center;
-    gap:14px;
+    gap:12px;
     margin-bottom:10px;
   }
   .card-head h2{
-    font-family:"Hiragino Maru Gothic ProN","M PLUS Rounded 1c","Yu Gothic",sans-serif;
-    font-size:17px;
+    font-size:16px;
     margin:0;
     font-weight:700;
+    letter-spacing:.02em;
   }
   .card p{
     margin:0;
@@ -145,21 +105,17 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:2px;
-    padding:10px 0;
+    gap:3px;
+    padding:8px 0;
   }
   .connector .arrow{
-    color:var(--teal);
-    font-size:20px;
+    color:var(--ink);
+    font-size:18px;
     line-height:1;
   }
   .connector .tag{
     font-size:12.5px;
-    color:var(--teal);
-    background:var(--teal-soft);
-    border-radius:999px;
-    padding:4px 14px;
-    font-weight:700;
+    color:var(--ink-soft);
     white-space:nowrap;
   }
 
@@ -177,51 +133,34 @@
   .measure-card li .dot{
     flex:none;
     margin-top:6px;
-    width:7px; height:7px;
+    width:6px; height:6px;
     border-radius:50%;
-    background:var(--teal);
+    background:var(--ink-soft);
   }
   .measure-card li.primary{ color:var(--ink); font-weight:700; }
-  .measure-card li.primary .dot{ background:var(--coral); }
+  .measure-card li.primary .dot{ background:var(--ink); }
 
-  .conclusion{
-    background:var(--teal);
-    color:#F4FBF9;
-    border:none;
-    border-radius:20px;
-    padding:26px 26px;
-    box-shadow:var(--shadow);
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-  }
-  .conclusion .badge{ background:rgba(255,255,255,.18); }
-  .conclusion p{ color:#EAF7F3; font-size:14.5px; line-height:1.8; margin:0; }
-  .conclusion h2{
-    font-family:"Hiragino Maru Gothic ProN","M PLUS Rounded 1c","Yu Gothic",sans-serif;
-    font-size:16px; margin:0 0 6px; color:#fff; font-weight:700;
+  .closing p{
+    margin:0;
+    font-size:14px;
+    line-height:1.8;
+    color:var(--ink);
   }
 </style>
 
 <div class="page">
 
-  <header>
-    <div class="kicker">RESEARCH PROTOCOL</div>
-    <h1>脊髄損傷パラアスリートの<br>糖質摂取に関する研究計画</h1>
-    <div class="sub">用量漸増試験 × 摂取形態比較試験</div>
-  </header>
-
   <div class="pair">
     <div class="card">
       <div class="card-head">
-        <div class="badge coral">🏃</div>
+        <div class="badge">🏃</div>
         <h2>主対象</h2>
       </div>
       <p>脊髄損傷のあるトップレベルのパラ陸上選手<br>2〜4名</p>
     </div>
     <div class="card">
       <div class="card-head">
-        <div class="badge teal">🧍</div>
+        <div class="badge">🧍</div>
         <h2>対照群</h2>
       </div>
       <p>脊髄損傷のない健常アスリート<br>2〜4名（同一競技でマッチング）</p>
@@ -236,7 +175,7 @@
   <div class="stack">
     <div class="card">
       <div class="card-head">
-        <div class="badge gold">🥤</div>
+        <div class="badge">🥤</div>
         <h2>実験1：用量漸増</h2>
       </div>
       <ul>
@@ -250,7 +189,7 @@
 
     <div class="card">
       <div class="card-head">
-        <div class="badge coral">🥣</div>
+        <div class="badge">🥣</div>
         <h2>実験2：摂取形態比較</h2>
       </div>
       <ul>
@@ -268,7 +207,7 @@
 
   <div class="card measure-card">
     <div class="card-head">
-      <div class="badge teal">🩸</div>
+      <div class="badge">🩸</div>
       <h2>共通の測定項目</h2>
     </div>
     <ul>
@@ -283,12 +222,8 @@
 
   <div class="connector"><span class="arrow">↓</span></div>
 
-  <div class="conclusion">
-    <div class="badge">🎯</div>
-    <div>
-      <h2>検証すること</h2>
-      <p>両群の用量反応・血糖パターンと症状・パフォーマンスの関係を比較し、症状発現閾値が脊損選手で低用量側にあるかを検証する。</p>
-    </div>
+  <div class="card closing">
+    <p>両群の用量反応・血糖パターンと症状・パフォーマンスの関係を比較し、症状発現閾値が脊損選手で低用量側にあるかを検証する。</p>
   </div>
 
 </div>

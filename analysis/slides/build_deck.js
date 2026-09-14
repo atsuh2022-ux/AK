@@ -1,0 +1,355 @@
+const pptxgen = require("pptxgenjs");
+
+// ---- palette ----
+const NAVY = "21295C";
+const DEEPBLUE = "065A82";
+const TEAL = "1C7293";
+const WHITE = "FFFFFF";
+const INK = "1A1A1A";
+const MUTED = "5C6570";
+const CARDBG = "F4F7F9";
+
+// condition colors (kept consistent with the glucose chart shown earlier)
+const C_SOLID = "2A78D6";      // 固形
+const C_SMOOTHIE = "EB6834";   // スムージー
+const C_ONIGISMO = "1BAF7A";   // おにぎり+スムージー
+const C_LOWSUGAR = "EDA100";   // 糖質減
+
+const times = ["08:00","08:15","08:30","08:45","09:00","09:15","09:30","09:45","10:00","10:15","10:30","10:45","11:00","11:15","11:30","11:45","12:00","12:15","12:30","12:45","13:00","13:15","13:30","13:45","14:00"];
+const hourlyLabels = times.map(t => (t.endsWith(":00") ? t : ""));
+
+const glucose = {
+  "固形摂取":            [99.0,112.0,133.3,129.0,113.0,105.3,108.7,108.7,106.0,120.0,130.3,125.3,120.3,135.0,152.7,143.0,139.0,129.7,119.0,131.0,143.0,136.7,138.0,140.3,129.0],
+  "スムージー摂取":        [159.3,163.0,182.0,202.7,193.7,163.7,149.0,148.7,154.7,179.3,194.3,226.0,226.3,223.0,239.7,244.3,213.7,225.0,218.3,218.7,224.7,207.0,212.3,222.7,211.0],
+  "おにぎり＋スムージー":    [164.3,169.3,208.7,235.0,225.7,219.3,207.3,212.3,207.0,191.3,188.0,185.0,182.7,193.0,208.0,226.3,229.0,227.3,231.3,242.3,236.7,224.7,219.3,218.7,222.3],
+  "おにぎり＋糖質減":      [166.0,183.7,217.0,197.0,193.7,193.7,198.7,185.3,174.3,172.3,199.7,217.7,211.0,195.0,218.3,235.0,237.0,225.7,226.7,241.0,245.0,242.3,250.3,241.0,213.7]
+};
+
+const pres = new pptxgen();
+pres.layout = "LAYOUT_WIDE"; // 13.33 x 7.5 in
+pres.theme = { headFontFace: "Cambria", bodyFontFace: "Calibri" };
+
+const W = 13.33, H = 7.5, MARGIN = 0.6;
+
+function addFooter(slide, pageNote, dark) {
+  slide.addText(pageNote, {
+    x: MARGIN, y: H - 0.42, w: W - MARGIN * 2, h: 0.3,
+    fontFace: "Calibri", fontSize: 10, color: dark ? "9AA6C4" : MUTED,
+    align: "left"
+  });
+}
+
+function titleBlock(slide, kicker, title, dark) {
+  slide.addText(kicker, {
+    x: MARGIN, y: 0.5, w: W - MARGIN * 2, h: 0.4,
+    fontFace: "Calibri", fontSize: 13, bold: true, color: dark ? "8FB7E0" : TEAL,
+    charSpacing: 1, isTextBox: true
+  });
+  slide.addText(title, {
+    x: MARGIN, y: 0.86, w: W - MARGIN * 2, h: 0.7,
+    fontFace: "Cambria", fontSize: 28, bold: true, color: dark ? WHITE : NAVY,
+    isTextBox: true
+  });
+}
+
+// ================= Slide 1: Title =================
+{
+  const s = pres.addSlide();
+  s.background = { color: NAVY };
+  s.addShape("rect", { x: 0, y: 0, w: W, h: H, fill: { color: NAVY } });
+  s.addShape("oval", { x: 10.6, y: -1.6, w: 5.5, h: 5.5, fill: { color: DEEPBLUE, transparency: 55 }, line: { type: "none" } });
+  s.addShape("oval", { x: -2.0, y: 4.6, w: 4.6, h: 4.6, fill: { color: TEAL, transparency: 60 }, line: { type: "none" } });
+
+  s.addText("SCI車いす選手 食事介入研究", {
+    x: MARGIN, y: 2.05, w: 10.5, h: 0.5, fontFace: "Calibri", fontSize: 15, bold: true,
+    color: "8FB7E0", charSpacing: 1.5, isTextBox: true
+  });
+  s.addText("おにぎり × スムージー 部分的液状化研究", {
+    x: MARGIN, y: 2.55, w: 11.5, h: 1.3, fontFace: "Cambria", fontSize: 40, bold: true,
+    color: WHITE, isTextBox: true
+  });
+  s.addText("血糖値・コンディション比較分析", {
+    x: MARGIN, y: 3.55, w: 11.5, h: 0.6, fontFace: "Calibri", fontSize: 20,
+    color: "CADCFC", isTextBox: true
+  });
+
+  s.addShape("line", { x: MARGIN, y: 4.5, w: 0, h: 0, line: { type: "none" } }); // noop spacer (avoid accent-line pattern elsewhere)
+
+  const stats = [
+    ["4", "比較条件"],
+    ["14", "測定日数(DAY)"],
+    ["25", "血糖測定点/日"],
+  ];
+  let sx = MARGIN;
+  stats.forEach(([n, l]) => {
+    s.addText(n, { x: sx, y: 5.35, w: 1.6, h: 0.7, fontFace: "Cambria", fontSize: 34, bold: true, color: WHITE, isTextBox: true, margin: 0 });
+    s.addText(l, { x: sx, y: 6.05, w: 2.6, h: 0.4, fontFace: "Calibri", fontSize: 12, color: "9AA6C4", isTextBox: true, margin: 0 });
+    sx += 2.0;
+  });
+
+  s.addText("高位脊髄損傷（SCI）車いす陸上選手 1名を対象とした反復測定", {
+    x: MARGIN, y: 6.75, w: 9, h: 0.4, fontFace: "Calibri", fontSize: 11, italic: true, color: "9AA6C4", isTextBox: true
+  });
+}
+
+// ================= Slide 2: Background =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "BACKGROUND", "研究の背景と目的", false);
+
+  const items = [
+    { n: "1", t: "SCI選手の病態生理", d: "高位脊髄損傷者は交感神経の遠心路が遮断され、食後低血圧・血糖値スパイク／反応性低血糖を起こしやすい。" },
+    { n: "2", t: "現場での気づき", d: "「おにぎり2個＋バナナ＆ヨーグルト」の副食をスムージー化したところ、練習時の出力が劇的に向上したとの報告。" },
+    { n: "3", t: "作業仮説", d: "おにぎりの満足感は残しつつ副食を部分的に液状化し、総固形物量を減らすことで胃排泄を促し、血糖・消化ストレスを回避できるのでは。" },
+    { n: "4", t: "本分析の目的", d: "4条件（固形／スムージー／おにぎり＋スムージー／糖質減食）で血糖動態と自覚コンディションへの影響を比較検証する。" },
+  ];
+  const colors = [DEEPBLUE, TEAL, C_ONIGISMO, NAVY];
+  let y = 1.85;
+  items.forEach((it, i) => {
+    s.addShape("oval", { x: MARGIN, y: y, w: 0.55, h: 0.55, fill: { color: colors[i] }, line: { type: "none" } });
+    s.addText(it.n, { x: MARGIN, y: y, w: 0.55, h: 0.55, align: "center", valign: "middle", fontFace: "Cambria", fontSize: 18, bold: true, color: WHITE, isTextBox: true, margin: 0 });
+    s.addText(it.t, { x: MARGIN + 0.8, y: y - 0.03, w: 10.8, h: 0.35, fontFace: "Calibri", fontSize: 15, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addText(it.d, { x: MARGIN + 0.8, y: y + 0.32, w: 10.9, h: 0.6, fontFace: "Calibri", fontSize: 12.5, color: MUTED, isTextBox: true, margin: 0 });
+    y += 1.28;
+  });
+  addFooter(s, "研究の背景と意義（提供資料より要約）", false);
+}
+
+// ================= Slide 3: Method / schedule =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "METHOD", "4条件の摂取スケジュール", false);
+
+  const rows = [
+    [{ text: "条件", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "日程", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "8:00の食事内容", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "おにぎりのタイミング", options: { bold: true, color: WHITE, fill: { color: NAVY } } }],
+    ["固形摂取", "DAY1〜3", "果物ヨーグルト（固形）のみ", "約2.5〜3時間後"],
+    ["スムージー摂取", "DAY4〜6", "果物ヨーグルト（スムージー）のみ", "約2.5〜3時間後"],
+    ["おにぎり＋スムージー", "DAY8〜10", "おにぎり＋スムージー（同時）", "8:00に同時摂取"],
+    ["おにぎり＋糖質減", "DAY11〜13", "おにぎり＋スムージー糖質減（同時）", "8:00に同時摂取"],
+  ].map((r, i) => i === 0 ? r : r.map((c, j) => ({
+    text: c, options: { color: j === 0 ? NAVY : INK, bold: j === 0, fill: { color: i % 2 === 0 ? CARDBG : WHITE }, fontSize: 12.5 }
+  })));
+
+  s.addTable(rows, {
+    x: MARGIN, y: 1.85, w: W - MARGIN * 2, h: 2.5,
+    fontFace: "Calibri", fontSize: 12.5, border: { type: "solid", color: "E3E1DB", pt: 0.75 },
+    autoPage: false, valign: "middle", rowH: 0.5,
+    colW: [2.6, 1.25, 5.2, 3.08]
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 4.75, w: W - MARGIN * 2, h: 1.85, rectRadius: 0.12, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("⚠ 重要な注意点", { x: MARGIN + 0.3, y: 4.92, w: 6, h: 0.35, fontFace: "Calibri", fontSize: 13, bold: true, color: "6B4B00", isTextBox: true, margin: 0 });
+  s.addText(
+    "固形・スムージー条件は「副食のみを先に食べ、おにぎりは約2.5〜3時間後」、おにぎり＋スムージー・糖質減条件は「おにぎりと副食を同時摂取」という異なるプロトコル。4条件は形態とタイミングが同時に変わるため、純粋な形態比較ができるのは「固形 vs スムージー（副食のみ）」に限られる。",
+    { x: MARGIN + 0.3, y: 5.32, w: W - MARGIN * 2 - 0.6, h: 1.2, fontFace: "Calibri", fontSize: 12, color: "6B4B00", isTextBox: true, margin: 0 }
+  );
+  addFooter(s, "n = 3日／条件（同一選手の反復測定）。12:00以降は自由摂取。", false);
+}
+
+// ================= Slide 4: Glucose curve =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "RESULTS", "血糖値の推移（8:00〜14:00）", false);
+
+  const chartData = Object.keys(glucose).map((k, i) => ({
+    name: k,
+    labels: times,
+    values: glucose[k]
+  }));
+  const chartColors = [C_SOLID, C_SMOOTHIE, C_ONIGISMO, C_LOWSUGAR];
+
+  s.addChart("line", chartData, {
+    x: MARGIN, y: 1.75, w: W - MARGIN * 2, h: 4.55,
+    chartColors: chartColors,
+    lineSize: 2.5, lineDataSymbol: "none",
+    showTitle: false,
+    showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: INK,
+    catAxisLabelColor: MUTED, catAxisLabelFontSize: 10,
+    valAxisLabelColor: MUTED, valAxisLabelFontSize: 10,
+    valAxisTitle: "血糖値 (mg/dL)", showValAxisTitle: true, valAxisTitleFontSize: 11, valAxisTitleColor: MUTED,
+    valGridLine: { color: "E3E1DB", size: 0.75 },
+    catGridLine: { style: "none" },
+    catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB",
+    catAxisLabelRotate: 0,
+    // thin out category labels to hour marks only
+    catAxisLabelFrequency: 4,
+    dataLabelColor: INK
+  });
+  addFooter(s, "15分間隔・条件ごとの平均血糖値（各条件3日間平均）。", false);
+}
+
+// ================= Slide 5: Key metrics bar charts =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "RESULTS", "主要指標の比較", false);
+
+  const conds = ["固形", "スムージー", "おにぎり+スムージー", "おにぎり+糖質減"];
+  const chartColors = [C_SOLID, C_SMOOTHIE, C_ONIGISMO, C_LOWSUGAR];
+
+  const deltaPeak = [53.7, 85.0, 78.0, 84.3];
+  const iauc2h = [1807.5, 1625.0, 5230.0, 3167.5];
+  const cv = [11.2, 14.7, 10.1, 11.8];
+
+  function barPanel(x, titleMain, titleSub, values, unit) {
+    s.addText(titleMain, { x, y: 1.72, w: 3.75, h: 0.3, fontFace: "Calibri", fontSize: 13, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addText(titleSub, { x, y: 2.0, w: 3.75, h: 0.28, fontFace: "Calibri", fontSize: 10.5, color: MUTED, isTextBox: true, margin: 0 });
+    s.addChart("bar", [{ name: titleMain, labels: conds, values }], {
+      x, y: 2.35, w: 3.75, h: 3.65,
+      barDir: "col",
+      chartColors: chartColors,
+      chartColorsOpacity: 100,
+      showTitle: false,
+      showLegend: false,
+      showValue: true, dataLabelPosition: "outEnd", dataLabelFontSize: 10.5, dataLabelColor: INK,
+      dataLabelFormatCode: unit === "%" ? "0.0" : "#,##0",
+      catAxisLabelColor: MUTED, catAxisLabelFontSize: 9.5, catAxisLabelRotate: 20,
+      valAxisHidden: true,
+      catGridLine: { style: "none" }, valGridLine: { style: "none" },
+      catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB",
+      barGapWidthPct: 40
+    });
+  }
+
+  barPanel(MARGIN, "Δピーク血糖値 (mg/dL)", "最高値 − 摂取直前", deltaPeak, "");
+  barPanel(MARGIN + 4.15, "iAUC 2時間 (mg/dL・分)", "ベースライン超過分の面積", iauc2h, "");
+  barPanel(MARGIN + 8.3, "変動係数 CV (%)", "6時間の値の乱高下", cv, "%");
+
+  addFooter(s, "iAUC = incremental AUC（ベースライン超過分のみを積算した正味の食後上昇量）。", false);
+}
+
+// ================= Slide 6: Comparison 1 =================
+function comparisonSlide(kicker, title, leftLabel, leftColor, leftStats, rightLabel, rightColor, rightStats, insight) {
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, kicker, title, false);
+
+  const colW = (W - MARGIN * 2 - 0.4) / 2;
+  function card(x, label, color, stats) {
+    s.addShape("roundRect", { x, y: 1.85, w: colW, h: 2.9, rectRadius: 0.1, fill: { color: CARDBG }, line: { type: "none" } });
+    s.addShape("rect", { x: x + 0.35, y: 2.1, w: 0.16, h: 0.5, fill: { color }, line: { type: "none" } });
+    s.addText(label, { x: x + 0.65, y: 2.05, w: colW - 1.0, h: 0.55, fontFace: "Calibri", fontSize: 16, bold: true, color: NAVY, isTextBox: true, margin: 0, valign: "middle" });
+    let sy = 2.8;
+    stats.forEach(([v, l]) => {
+      s.addText(v, { x: x + 0.35, y: sy, w: colW - 0.7, h: 0.55, fontFace: "Cambria", fontSize: 26, bold: true, color, isTextBox: true, margin: 0 });
+      s.addText(l, { x: x + 0.35, y: sy + 0.5, w: colW - 0.7, h: 0.35, fontFace: "Calibri", fontSize: 11, color: MUTED, isTextBox: true, margin: 0 });
+      sy += 0.87;
+    });
+  }
+  card(MARGIN, leftLabel, leftColor, leftStats);
+  card(MARGIN + colW + 0.4, rightLabel, rightColor, rightStats);
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.0, w: W - MARGIN * 2, h: 1.65, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("考察", { x: MARGIN + 0.3, y: 5.15, w: 3, h: 0.3, fontFace: "Calibri", fontSize: 12, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+  s.addText(insight, { x: MARGIN + 0.3, y: 5.48, w: W - MARGIN * 2 - 0.6, h: 1.05, fontFace: "Calibri", fontSize: 12.5, color: INK, isTextBox: true, margin: 0 });
+
+  return s;
+}
+
+comparisonSlide(
+  "COMPARISON 1", "スムージー vs 固形（副食のみ・純粋比較）",
+  "固形摂取", C_SOLID, [["53.7 mg/dL", "Δピーク血糖値"], ["11.2%", "変動係数 CV"]],
+  "スムージー摂取", C_SMOOTHIE, [["85.0 mg/dL", "Δピーク血糖値（1.6倍）"], ["14.7%", "変動係数 CV"]],
+  "副食を液状化するだけで血糖の上昇幅・乱高下は明確に増大。液状化は消化の負担感を下げる一方、血糖の安定には必ずしも寄与しない可能性がある。選手の「出力向上」の体感は、血糖の安定ではなく消化器系の負担軽減（内臓への血流集中の緩和）による可能性が高い。"
+);
+
+comparisonSlide(
+  "COMPARISON 2", "スムージー vs おにぎり＋スムージー",
+  "スムージー摂取", C_SMOOTHIE, [["85.0 mg/dL", "Δピーク血糖値"], ["14.7%", "変動係数 CV"]],
+  "おにぎり＋スムージー", C_ONIGISMO, [["78.0 mg/dL", "Δピーク血糖値"], ["10.1%", "変動係数 CV（最小）"]],
+  "おにぎりを同時摂取した方がΔピーク・CVともに小さい。おにぎり（固形デンプン）が副食の急激な糖吸収を緩衝し、波形がなだらかになっている可能性がある。総摂取糖質量は増えるが（iAUC絶対値は上昇）、研究背景の「総固形物量の調整による血糖・消化ストレス緩和」仮説を支持する結果。"
+);
+
+comparisonSlide(
+  "COMPARISON 3", "おにぎり＋スムージー vs おにぎり＋糖質減",
+  "おにぎり＋スムージー", C_ONIGISMO, [["5,230", "iAUC 2h (mg/dL・分)"], ["242.3 mg/dL", "ピーク血糖値"]],
+  "おにぎり＋糖質減", C_LOWSUGAR, [["3,168 (▼39%)", "iAUC 2h (mg/dL・分)"], ["250.3 mg/dL", "ピーク血糖値（同水準）"]],
+  "研究目的に最も近い比較。糖質を減らすことで食後2時間の正味の血糖上昇（iAUC）が約39%減少。ピーク自体の高さはほぼ同水準だが、上昇の「持続・面積」＝体への負荷は明確に小さい。おにぎりの満足感を保ちながら総糖質量を最適化する方針はデータ上も支持される。"
+);
+
+// ================= Slide 9: Condition survey =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "CONDITION", "自覚コンディション（おにぎり＋スムージー条件, DAY8〜10）", false);
+
+  const condTimes = ["8:00", "8:30", "9:00", "9:30", "10:00"];
+  const condSeries = [
+    { name: "満腹感 (0-10)", labels: condTimes, values: [2.33, 7.67, 5.33, 5.5, 3.33] },
+    { name: "吐き気 (1-5)", labels: condTimes, values: [1, 1, 1, 2, 1] },
+    { name: "食欲 (0-10)", labels: condTimes, values: [7.0, 3.67, 5.33, 5.5, 5.67] },
+  ];
+  s.addChart("line", condSeries, {
+    x: MARGIN, y: 1.85, w: 7.3, h: 4.5,
+    chartColors: [C_SOLID, "E34948", C_ONIGISMO],
+    lineSize: 2.5, lineDataSymbol: "circle", lineDataSymbolSize: 6,
+    showTitle: false,
+    showLegend: true, legendPos: "b", legendFontSize: 11, legendColor: INK,
+    catAxisLabelColor: MUTED, catAxisLabelFontSize: 10.5,
+    valAxisLabelColor: MUTED, valAxisLabelFontSize: 10.5,
+    valAxisMinVal: 0, valAxisMaxVal: 10,
+    valGridLine: { color: "E3E1DB", size: 0.75 },
+    catGridLine: { style: "none" },
+    catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB"
+  });
+
+  s.addShape("roundRect", { x: 8.65, y: 1.85, w: 4.08, h: 4.5, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("✓ 良好な忍容性", { x: 8.95, y: 2.1, w: 3.5, h: 0.4, fontFace: "Calibri", fontSize: 14, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+  const notes = [
+    "頭痛：全測定点で最小値(1)のまま変化なし",
+    "吐き気：ほぼ1（DAY10の9:30のみ一時的に3）",
+    "満腹感：摂取30分後にピーク(7.7/10)、10:00には3.3まで回復",
+    "食欲：満腹感と同期して回復",
+    "血糖値は高めに推移する一方、自覚的な消化器症状は軽微"
+  ];
+  let ny = 2.65;
+  notes.forEach(n => {
+    s.addText("•  " + n, { x: 8.95, y: ny, w: 3.55, h: 0.65, fontFace: "Calibri", fontSize: 11.5, color: INK, isTextBox: true, margin: 0 });
+    ny += 0.72;
+  });
+
+  addFooter(s, "他3条件の同形式データは提供ファイルに未収録のため、条件間の直接比較は不可。", false);
+}
+
+// ================= Slide 10: Conclusion =================
+{
+  const s = pres.addSlide();
+  s.background = { color: NAVY };
+  titleBlock(s, "CONCLUSION", "結論と次のステップ", true);
+
+  const concl = [
+    "おにぎりを崩さず副食のみ液状化する方針は、血糖の観点からも妥当（②の結果）",
+    "総糖質量の最適化（糖質減食）はiAUC 2hを約39%削減する明確な効果あり（③の結果）",
+    "おにぎり＋スムージー条件では自覚的な消化器症状（頭痛・吐き気）は軽微で忍容性は良好",
+  ];
+  let y = 1.9;
+  concl.forEach((c, i) => {
+    s.addShape("oval", { x: MARGIN, y, w: 0.42, h: 0.42, fill: { color: "1C7293" }, line: { type: "none" } });
+    s.addText(String(i + 1), { x: MARGIN, y, w: 0.42, h: 0.42, align: "center", valign: "middle", fontFace: "Cambria", fontSize: 14, bold: true, color: WHITE, isTextBox: true, margin: 0 });
+    s.addText(c, { x: MARGIN + 0.65, y: y - 0.02, w: 11.3, h: 0.6, fontFace: "Calibri", fontSize: 14, color: "E8EDF7", isTextBox: true, margin: 0, valign: "middle" });
+    y += 0.85;
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 4.55, w: W - MARGIN * 2, h: 2.2, rectRadius: 0.1, fill: { color: "1A2350" }, line: { type: "none" } });
+  s.addText("次のステップ", { x: MARGIN + 0.35, y: 4.75, w: 6, h: 0.35, fontFace: "Calibri", fontSize: 14, bold: true, color: "8FB7E0", isTextBox: true, margin: 0 });
+  const next = [
+    "8:00ベースライン血糖の条件間差（60〜70 mg/dL）の要因確認（前日運動量・睡眠・センサー校正）",
+    "固形・スムージー・糖質減の3条件でも同形式のコンディションアンケートを取得し4条件フル比較を実現",
+    "練習時の出力（パワー・タイム等）データとの突合による血糖動態との相関検証",
+  ];
+  let ny = 5.2;
+  next.forEach(n => {
+    s.addText("•  " + n, { x: MARGIN + 0.35, y: ny, w: W - MARGIN * 2 - 0.7, h: 0.5, fontFace: "Calibri", fontSize: 12.5, color: "CADCFC", isTextBox: true, margin: 0 });
+    ny += 0.48;
+  });
+
+  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx", true);
+}
+
+pres.writeFile({ fileName: "output.pptx" }).then(() => console.log("done"));

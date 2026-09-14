@@ -277,44 +277,64 @@ comparisonSlide(
 {
   const s = pres.addSlide();
   s.background = { color: WHITE };
-  titleBlock(s, "CONDITION", "自覚コンディション（おにぎり＋スムージー条件, DAY8〜10）", false);
+  titleBlock(s, "CONDITION", "自覚コンディション（4条件比較）", false);
 
   const condTimes = ["8:00", "8:30", "9:00", "9:30", "10:00"];
-  const condSeries = [
-    { name: "満腹感 (0-10)", labels: condTimes, values: [2.33, 7.67, 5.33, 5.5, 3.33] },
-    { name: "吐き気 (1-5)", labels: condTimes, values: [1, 1, 1, 2, 1] },
-    { name: "食欲 (0-10)", labels: condTimes, values: [7.0, 3.67, 5.33, 5.5, 5.67] },
+  const condConds = ["固形", "スムージー", "おにぎり+スムージー", "おにぎり+糖質減"];
+  const condColors = [C_SOLID, C_SMOOTHIE, C_ONIGISMO, C_LOWSUGAR];
+
+  const fullness = [
+    [1.67, 4.00, 4.00, 2.00, 2.00],
+    [3.33, 3.67, 5.00, 2.00, 1.33],
+    [2.33, 7.67, 5.33, 5.50, 3.33],
+    [1.67, 9.00, 8.00, 5.50, 4.67],
   ];
-  s.addChart("line", condSeries, {
-    x: MARGIN, y: 1.85, w: 7.3, h: 4.5,
-    chartColors: [C_SOLID, "E34948", C_ONIGISMO],
-    lineSize: 2.5, lineDataSymbol: "circle", lineDataSymbolSize: 6,
-    showTitle: false,
-    showLegend: true, legendPos: "b", legendFontSize: 11, legendColor: INK,
-    catAxisLabelColor: MUTED, catAxisLabelFontSize: 10.5,
-    valAxisLabelColor: MUTED, valAxisLabelFontSize: 10.5,
-    valAxisMinVal: 0, valAxisMaxVal: 10,
-    valGridLine: { color: "E3E1DB", size: 0.75 },
-    catGridLine: { style: "none" },
-    catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB"
+  const appetite = [
+    [7.67, 8.00, 7.00, 7.67, 7.67],
+    [8.67, 6.33, 5.50, 7.67, 8.67],
+    [7.00, 3.67, 5.33, 5.50, 5.67],
+    [9.00, 3.33, 3.00, 4.50, 5.33],
+  ];
+
+  function condChart(y, title, values) {
+    s.addText(title, { x: MARGIN, y, w: 6.9, h: 0.28, fontFace: "Calibri", fontSize: 12.5, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addChart("line", condConds.map((c, i) => ({ name: c, labels: condTimes, values: values[i] })), {
+      x: MARGIN, y: y + 0.3, w: 6.9, h: 1.85,
+      chartColors: condColors,
+      lineSize: 2, lineDataSymbol: "circle", lineDataSymbolSize: 5,
+      showTitle: false, showLegend: false,
+      catAxisLabelColor: MUTED, catAxisLabelFontSize: 9.5,
+      valAxisLabelColor: MUTED, valAxisLabelFontSize: 9.5,
+      valAxisMinVal: 0, valAxisMaxVal: 10,
+      valGridLine: { color: "E3E1DB", size: 0.75 },
+      catGridLine: { style: "none" },
+      catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB"
+    });
+  }
+  condChart(1.75, "満腹感の推移 (0=空腹〜10=満腹)", fullness);
+  condChart(4.05, "食欲(摂食可能感)の推移 (0=食べられない〜10=まだ食べられる)", appetite);
+
+  // shared legend
+  let lx = MARGIN;
+  condConds.forEach((c, i) => {
+    s.addShape("rect", { x: lx, y: 6.42, w: 0.16, h: 0.13, fill: { color: condColors[i] }, line: { type: "none" } });
+    s.addText(c, { x: lx + 0.22, y: 6.30, w: 1.7, h: 0.3, fontFace: "Calibri", fontSize: 9.5, color: MUTED, isTextBox: true, margin: 0 });
+    lx += 1.78;
   });
 
-  s.addShape("roundRect", { x: 8.65, y: 1.85, w: 4.08, h: 4.5, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
-  s.addText("✓ 良好な忍容性", { x: 8.95, y: 2.1, w: 3.5, h: 0.4, fontFace: "Calibri", fontSize: 14, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+  s.addShape("roundRect", { x: 8.35, y: 1.75, w: 4.38, h: 4.85, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("✓ 消化器症状は4条件とも良好", { x: 8.65, y: 2.0, w: 3.9, h: 0.4, fontFace: "Calibri", fontSize: 13.5, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
   const notes = [
-    "頭痛：全測定点で最小値(1)のまま変化なし",
-    "吐き気：ほぼ1（DAY10の9:30のみ一時的に3）",
-    "満腹感：摂取30分後にピーク(7.7/10)、10:00には3.3まで回復",
-    "食欲：満腹感と同期して回復",
-    "血糖値は高めに推移する一方、自覚的な消化器症状は軽微"
+    "頭痛：4条件すべて全測定点で最小値(1)、変化なし",
+    "吐き気：4条件すべてほぼ1（おにぎり+スムージーのDAY10 9:30のみ一時的に2）",
+    "血糖値が高めに推移するおにぎり同時摂取条件でも、消化器症状は悪化していない",
+    "満腹感・食欲の差は「おにぎりを同時に食べたか」による食事量の違いを反映しており、副食の形態（固形/液状）そのものの効果ではない",
   ];
-  let ny = 2.65;
+  let ny = 2.55;
   notes.forEach(n => {
-    s.addText("•  " + n, { x: 8.95, y: ny, w: 3.55, h: 0.65, fontFace: "Calibri", fontSize: 11.5, color: INK, isTextBox: true, margin: 0 });
-    ny += 0.72;
+    s.addText("•  " + n, { x: 8.65, y: ny, w: 3.85, h: 0.95, fontFace: "Calibri", fontSize: 11, color: INK, isTextBox: true, margin: 0 });
+    ny += 1.02;
   });
-
-  addFooter(s, "他3条件の同形式データは提供ファイルに未収録のため、条件間の直接比較は不可。", false);
 }
 
 // ================= Slide 10: Conclusion =================
@@ -326,7 +346,7 @@ comparisonSlide(
   const concl = [
     "おにぎりを崩さず副食のみ液状化する方針は、血糖の観点からも妥当（②の結果）",
     "総糖質量の最適化（糖質減食）はiAUC 2hを約39%削減する明確な効果あり（③の結果）",
-    "おにぎり＋スムージー条件では自覚的な消化器症状（頭痛・吐き気）は軽微で忍容性は良好",
+    "頭痛・吐き気は4条件とも軽微で差がなく、血糖動態の違いが消化器症状の悪化にはつながっていない",
   ];
   let y = 1.9;
   concl.forEach((c, i) => {
@@ -340,7 +360,7 @@ comparisonSlide(
   s.addText("次のステップ", { x: MARGIN + 0.35, y: 4.75, w: 6, h: 0.35, fontFace: "Calibri", fontSize: 14, bold: true, color: "8FB7E0", isTextBox: true, margin: 0 });
   const next = [
     "8:00ベースライン血糖の条件間差（60〜70 mg/dL）の要因確認（前日運動量・睡眠・センサー校正）",
-    "固形・スムージー・糖質減の3条件でも同形式のコンディションアンケートを取得し4条件フル比較を実現",
+    "満腹感・食欲の条件差は「おにぎり同時摂取による食事量の違い」であり、形態そのものの効果ではない点に留意",
     "練習時の出力（パワー・タイム等）データとの突合による血糖動態との相関検証",
   ];
   let ny = 5.2;

@@ -145,10 +145,82 @@ function titleBlock(slide, kicker, title, dark) {
   s.addShape("roundRect", { x: MARGIN, y: 4.75, w: W - MARGIN * 2, h: 1.85, rectRadius: 0.12, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
   s.addText("⚠ 重要な注意点", { x: MARGIN + 0.3, y: 4.92, w: 6, h: 0.35, fontFace: "Calibri", fontSize: 13, bold: true, color: "6B4B00", isTextBox: true, margin: 0 });
   s.addText(
-    "固形・スムージー条件は「副食のみを先に食べ、おにぎりは約2.5〜3時間後」、おにぎり＋スムージー・糖質減条件は「おにぎりと副食を同時摂取」という異なるプロトコル。4条件は形態とタイミングが同時に変わるため、純粋な形態比較ができるのは「固形 vs スムージー（副食のみ）」に限られる。",
+    "固形・スムージー条件は「副食のみを先に食べ、おにぎりは約2.5〜3時間後」、おにぎり＋スムージー・糖質減条件は「おにぎりと副食を同時摂取」という異なるプロトコル。4条件は形態とタイミングが同時に変わるため、純粋な形態比較ができるのは「固形 vs スムージー（副食のみ）」に限られる。トレーニングはどの条件も11:00〜14:00の間に実施（1日60〜180分、条件ブロックにより変動）。",
     { x: MARGIN + 0.3, y: 5.32, w: W - MARGIN * 2 - 0.6, h: 1.2, fontFace: "Calibri", fontSize: 12, color: "6B4B00", isTextBox: true, margin: 0 }
   );
   addFooter(s, "n = 3日／条件（同一選手の反復測定）。12:00以降は自由摂取。", false);
+}
+
+// ================= Slide 3.5: Experimental design timeline =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "METHOD", "実験デザイン（1日のタイムライン）", false);
+
+  const rowDefs = [
+    { label: "固形摂取", sub: "DAY1〜3", color: C_SOLID,
+      breakfast: "果物ヨーグルト（固形）", onigiriLater: true },
+    { label: "スムージー摂取", sub: "DAY4〜6", color: C_SMOOTHIE,
+      breakfast: "果物ヨーグルト（スムージー）", onigiriLater: true },
+    { label: "おにぎり＋スムージー", sub: "DAY8〜10", color: C_ONIGISMO,
+      breakfast: "おにぎり＋スムージー（同時）", onigiriLater: false },
+    { label: "おにぎり＋糖質減", sub: "DAY11〜13", color: C_LOWSUGAR,
+      breakfast: "おにぎり＋スムージー糖質減（同時）", onigiriLater: false },
+  ];
+
+  const TL_X0 = MARGIN + 2.35, TL_X1 = W - MARGIN - 0.1;
+  const TL_W = TL_X1 - TL_X0;
+  const H0 = 8, H1 = 20; // 8:00 - 20:00
+  const hourToX = h => TL_X0 + ((h - H0) / (H1 - H0)) * TL_W;
+
+  // hour axis ticks (top)
+  const axisY = 1.72;
+  for (let h = H0; h <= H1; h += 2) {
+    const tickAlign = h === H0 ? "left" : (h === H1 ? "right" : "center");
+    const tickX = h === H0 ? hourToX(h) : (h === H1 ? hourToX(h) - 0.7 : hourToX(h) - 0.35);
+    s.addText(`${h}:00`, { x: tickX, y: axisY, w: 0.7, h: 0.22, align: tickAlign, fontFace: "Calibri", fontSize: 9, color: MUTED, isTextBox: true, margin: 0 });
+    s.addShape("line", { x: hourToX(h), y: axisY + 0.24, w: 0, h: 4.55, line: { color: "EDEBE4", width: 0.75 } });
+  }
+
+  const rowH = 1.02, rowTop0 = 2.05;
+  rowDefs.forEach((r, i) => {
+    const y = rowTop0 + i * rowH;
+    const barY = y + 0.32, barH = 0.34;
+
+    s.addText(r.label, { x: MARGIN, y: y + 0.06, w: 2.05, h: 0.32, fontFace: "Calibri", fontSize: 12, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addText(r.sub, { x: MARGIN, y: y + 0.36, w: 2.05, h: 0.26, fontFace: "Calibri", fontSize: 9.5, color: MUTED, isTextBox: true, margin: 0 });
+
+    // baseline
+    s.addShape("line", { x: TL_X0, y: barY + barH / 2, w: TL_W, h: 0, line: { color: "E3E1DB", width: 1 } });
+
+    // 8:00 breakfast marker
+    const bx = hourToX(8);
+    s.addShape("roundRect", { x: bx, y: barY, w: 0.55, h: barH, rectRadius: 0.05, fill: { color: r.color }, line: { type: "none" } });
+    s.addText(r.breakfast, { x: bx - 0.1, y: barY - 0.28, w: 3.4, h: 0.26, fontFace: "Calibri", fontSize: 8.5, color: r.color, bold: true, isTextBox: true, margin: 0 });
+
+    // onigiri-later marker for 固形/スムージー
+    if (r.onigiriLater) {
+      const ox = hourToX(10.5);
+      s.addShape("oval", { x: ox - 0.06, y: barY + barH / 2 - 0.06, w: 0.12, h: 0.12, fill: { color: r.color }, line: { color: WHITE, width: 1 } });
+      s.addText("おにぎり摂取", { x: ox - 0.55, y: barY + barH + 0.03, w: 1.3, h: 0.22, align: "center", fontFace: "Calibri", fontSize: 8, color: r.color, isTextBox: true, margin: 0 });
+    }
+
+    // shared training window 11:00-14:00
+    const tx0 = hourToX(11), tx1 = hourToX(14);
+    s.addShape("roundRect", { x: tx0, y: barY, w: tx1 - tx0, h: barH, rectRadius: 0.05, fill: { color: NAVY, transparency: 25 }, line: { type: "none" } });
+
+    // 20:00 dinner marker
+    const dx = hourToX(20);
+    s.addShape("oval", { x: dx - 0.055, y: barY + barH / 2 - 0.055, w: 0.11, h: 0.11, fill: { color: MUTED }, line: { type: "none" } });
+  });
+
+  // legend / annotation for training block + dinner marker
+  s.addShape("roundRect", { x: MARGIN, y: rowTop0 + rowDefs.length * rowH + 0.15, w: 0.3, h: 0.16, rectRadius: 0.04, fill: { color: NAVY, transparency: 25 }, line: { type: "none" } });
+  s.addText("トレーニング（60〜180分、11:00〜14:00の間で実施）", { x: MARGIN + 0.38, y: rowTop0 + rowDefs.length * rowH + 0.06, w: 5.5, h: 0.32, fontFace: "Calibri", fontSize: 10, color: INK, isTextBox: true, margin: 0 });
+  s.addShape("oval", { x: MARGIN + 6.3, y: rowTop0 + rowDefs.length * rowH + 0.18, w: 0.11, h: 0.11, fill: { color: MUTED }, line: { type: "none" } });
+  s.addText("20:00 夕食＋夜のコンディション記録（毎日共通）", { x: MARGIN + 6.55, y: rowTop0 + rowDefs.length * rowH + 0.06, w: 5.5, h: 0.32, fontFace: "Calibri", fontSize: 10, color: INK, isTextBox: true, margin: 0 });
+
+  addFooter(s, "色付きブロック＝朝の被験食摂取（8:00）。固形・スムージー条件はおにぎりを約2.5時間後に別途摂取。灰色帯＝全条件共通のトレーニング時間帯。", false);
 }
 
 // ================= Slide 4: Glucose curve =================
@@ -337,6 +409,93 @@ comparisonSlide(
   });
 }
 
+// ================= Slide: Nightly performance metrics =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "PERFORMANCE", "毎晩のコンディション・トレーニング指標（4条件比較）", false);
+
+  const perfConds = ["固形", "スムージー", "おにぎり+スムージー", "おにぎり+糖質減"];
+  const perfColors = [C_SOLID, C_SMOOTHIE, C_ONIGISMO, C_LOWSUGAR];
+
+  const metrics = [
+    { title: "起床時コンディション", sub: "高いほど良好", values: [2.00, 2.33, 2.33, 2.67] },
+    { title: "睡眠の質", sub: "高いほど良好", values: [2.00, 2.00, 2.00, 2.67] },
+    { title: "持久力（自己評価）", sub: "高いほど良好", values: [3.00, 3.67, 3.83, 2.33] },
+    { title: "爆発力（自己評価）", sub: "高いほど良好", values: [4.00, 3.67, 3.50, 3.33] },
+    { title: "RPE（主観的運動強度）", sub: "高いほどきつい", values: [6.67, 5.67, 5.50, 6.33] },
+    { title: "練習時間 (分/日)", sub: "条件ブロックにより変動", values: [140, 60, 80, 100], intFmt: true },
+  ];
+
+  const panelW = 3.75, gapX = 0.4;
+  const cols = 3;
+  metrics.forEach((m, idx) => {
+    const col = idx % cols, row = Math.floor(idx / cols);
+    const x = MARGIN + col * (panelW + gapX);
+    const y = 1.72 + row * 2.55;
+    s.addText(m.title, { x, y, w: panelW, h: 0.28, fontFace: "Calibri", fontSize: 12, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addText(m.sub, { x, y: y + 0.27, w: panelW, h: 0.24, fontFace: "Calibri", fontSize: 9.5, color: MUTED, isTextBox: true, margin: 0 });
+    s.addChart("bar", [{ name: m.title, labels: perfConds, values: m.values }], {
+      x, y: y + 0.58, w: panelW, h: 1.85,
+      barDir: "col",
+      chartColors: perfColors,
+      chartColorsOpacity: 100,
+      showTitle: false, showLegend: false,
+      showValue: true, dataLabelPosition: "outEnd", dataLabelFontSize: 9.5, dataLabelColor: INK,
+      dataLabelFormatCode: m.intFmt ? "#,##0" : "0.0",
+      catAxisLabelColor: MUTED, catAxisLabelFontSize: 8.5, catAxisLabelRotate: 20,
+      valAxisHidden: true,
+      catGridLine: { style: "none" }, valGridLine: { style: "none" },
+      catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB",
+      barGapWidthPct: 35
+    });
+  });
+
+  addFooter(s, "各条件3日間平均。起床時コンディション・睡眠の質・持久力・爆発力は高いほど良好、運動後疲労・RPEは高いほど負荷が大きいと仮定（原データに尺度定義なし）。", false);
+}
+
+// ================= Slide: Synthesis / trade-off =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "SYNTHESIS", "総合考察：食事 × トレーニング × 血糖", false);
+
+  s.addShape("roundRect", { x: MARGIN, y: 1.75, w: W - MARGIN * 2, h: 1.55, rectRadius: 0.12, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("⚠ 重要な交絡：練習時間が条件ブロックごとに大きく異なる", { x: MARGIN + 0.3, y: 1.9, w: W - MARGIN * 2 - 0.6, h: 0.3, fontFace: "Calibri", fontSize: 13, bold: true, color: "6B4B00", isTextBox: true, margin: 0 });
+  s.addText(
+    "固形の3日間は平均140分（180/120/120分）と突出して長く、スムージーの3日間は毎日60分で最短。RPE・爆発力・持久力・運動後疲労は運動量そのものにも左右されるため、固形のRPE・爆発力の高さは「食事」よりも「練習量が多かったこと」を反映している可能性がある。トレーニングはどの条件も11:00〜14:00の間に実施。",
+    { x: MARGIN + 0.3, y: 2.24, w: W - MARGIN * 2 - 0.6, h: 1.0, fontFace: "Calibri", fontSize: 11.5, color: "6B4B00", isTextBox: true, margin: 0 }
+  );
+
+  const colW = (W - MARGIN * 2 - 0.4) / 2;
+  function tradeCard(x, title, color, lines) {
+    s.addShape("roundRect", { x, y: 3.5, w: colW, h: 2.0, rectRadius: 0.1, fill: { color: CARDBG }, line: { type: "none" } });
+    s.addShape("rect", { x: x + 0.3, y: 3.65, w: 0.16, h: 0.38, fill: { color }, line: { type: "none" } });
+    s.addText(title, { x: x + 0.58, y: 3.61, w: colW - 0.9, h: 0.46, fontFace: "Calibri", fontSize: 14, bold: true, color: NAVY, isTextBox: true, margin: 0, valign: "middle" });
+    let ly = 4.15;
+    lines.forEach(l => {
+      s.addText("•  " + l, { x: x + 0.3, y: ly, w: colW - 0.6, h: 0.38, fontFace: "Calibri", fontSize: 11, color: INK, isTextBox: true, margin: 0 });
+      ly += 0.42;
+    });
+  }
+  tradeCard(MARGIN, "おにぎり＋スムージー（糖質ノーマル）", C_ONIGISMO, [
+    "血糖の乱高下（CV）が4条件中最小",
+    "持久力の自己評価が4条件中最高（3.83）",
+    "消化器症状も軽微"
+  ]);
+  tradeCard(MARGIN + colW + 0.4, "おにぎり＋糖質減", C_LOWSUGAR, [
+    "起床時コンディション・睡眠の質が4条件中最高",
+    "iAUC 2hが約39%減少（血糖面で最良）",
+    "持久力・爆発力の自己評価は4条件中最低"
+  ]);
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.7, w: W - MARGIN * 2, h: 1.3, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText(
+    "✓ 総合評価：現時点のデータでは「おにぎり＋スムージー（糖質ノーマル）」が最もバランスの良い候補。「おにぎり＋糖質減」は血糖・睡眠面で優れるが、持久力・爆発力の低下が見られるため、強度の高い練習日には慎重な適用が望ましい。",
+    { x: MARGIN + 0.3, y: 5.9, w: W - MARGIN * 2 - 0.6, h: 0.95, fontFace: "Calibri", fontSize: 12.5, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 }
+  );
+}
+
 // ================= Slide 10: Conclusion =================
 {
   const s = pres.addSlide();
@@ -345,8 +504,8 @@ comparisonSlide(
 
   const concl = [
     "おにぎりを崩さず副食のみ液状化する方針は、血糖の観点からも妥当（②の結果）",
-    "総糖質量の最適化（糖質減食）はiAUC 2hを約39%削減する明確な効果あり（③の結果）",
-    "頭痛・吐き気は4条件とも軽微で差がなく、血糖動態の違いが消化器症状の悪化にはつながっていない",
+    "総糖質量の最適化（糖質減食）は血糖面では明確に効果あり（iAUC 2h ▼39%）が、持久力・爆発力はトレードオフの兆候あり",
+    "総合評価：現時点では「おにぎり＋スムージー（糖質ノーマル）」が最もバランスの良い候補",
   ];
   let y = 1.9;
   concl.forEach((c, i) => {
@@ -360,8 +519,8 @@ comparisonSlide(
   s.addText("次のステップ", { x: MARGIN + 0.35, y: 4.75, w: 6, h: 0.35, fontFace: "Calibri", fontSize: 14, bold: true, color: "8FB7E0", isTextBox: true, margin: 0 });
   const next = [
     "8:00ベースライン血糖の条件間差（60〜70 mg/dL）の要因確認（前日運動量・睡眠・センサー校正）",
+    "練習時間が条件ブロックごとに大きく異なる（60〜180分）ため、今後は練習内容・時間を揃えて再検証すると食事の純粋な効果を評価しやすくなる",
     "満腹感・食欲の条件差は「おにぎり同時摂取による食事量の違い」であり、形態そのものの効果ではない点に留意",
-    "練習時の出力（パワー・タイム等）データとの突合による血糖動態との相関検証",
   ];
   let ny = 5.2;
   next.forEach(n => {
@@ -369,7 +528,7 @@ comparisonSlide(
     ny += 0.48;
   });
 
-  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx", true);
+  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx", true);
 }
 
 pres.writeFile({ fileName: "output.pptx" }).then(() => console.log("done"));

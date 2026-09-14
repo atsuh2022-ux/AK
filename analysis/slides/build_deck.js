@@ -345,6 +345,91 @@ comparisonSlide(
   "研究目的に最も近い比較。糖質を減らすことで食後2時間の正味の血糖上昇（iAUC）が約39%減少。ピーク自体の高さはほぼ同水準だが、上昇の「持続・面積」＝体への負荷は明確に小さい。おにぎりの満足感を保ちながら総糖質量を最適化する方針はデータ上も支持される。"
 );
 
+// ================= Slide: Timing effect (same-energy comparison) =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "COMPARISON 5", "タイミングの効果：同時摂取 vs 分割摂取（同エネルギー条件下）", false);
+  s.addText(
+    "4条件とも14:00までの総エネルギーはほぼ同じ。「おにぎりを8:00に同時に食べるか、10:00〜11:00に分けて食べるか」の純粋な効果を、自由摂取前（8:00〜11:30）に絞って比較。",
+    { x: MARGIN, y: 1.6, w: W - MARGIN * 2, h: 0.5, fontFace: "Calibri", fontSize: 12.5, color: MUTED, isTextBox: true, margin: 0 }
+  );
+
+  const rows2 = [
+    [{ text: "条件", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "平均血糖(8:00-11:30)", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "CV", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "Δピーク", options: { bold: true, color: WHITE, fill: { color: NAVY } } }],
+    ["固形（分割・全て固形）", "119.9", "12.0%", "53.7"],
+    ["スムージー（分割）", "187.0", "16.5%", "80.3"],
+    ["おにぎり＋スムージー（同時）", "199.8", "10.1%", "70.7"],
+    ["おにぎり＋糖質減（同時）", "194.9", "8.5%", "52.3"],
+  ].map((r, i) => i === 0 ? r : r.map((c, j) => ({
+    text: c, options: { color: j === 0 ? NAVY : INK, bold: j === 0, fill: { color: i % 2 === 0 ? CARDBG : WHITE }, fontSize: 13 }
+  })));
+  s.addTable(rows2, {
+    x: MARGIN, y: 2.2, w: W - MARGIN * 2, h: 2.0,
+    fontFace: "Calibri", fontSize: 13, border: { type: "solid", color: "E3E1DB", pt: 0.75 },
+    autoPage: false, valign: "middle", rowH: 0.4,
+    colW: [4.4, 3.0, 2.4, 2.33]
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 4.5, w: W - MARGIN * 2, h: 2.3, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("✓ 同時摂取にすると平均血糖は少し上がるが、乱高下は明確に小さくなる", { x: MARGIN + 0.3, y: 4.68, w: W - MARGIN * 2 - 0.6, h: 0.35, fontFace: "Calibri", fontSize: 13.5, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+  s.addText(
+    "副食とおにぎりを2.5〜3時間ずらして食べると、それぞれが独立した急峻な山を作るのに対し、同時に食べるとおにぎり（ゆっくり吸収されるデンプン）が副食の急な糖吸収を緩衝し、1つのなだらかな波にまとまると解釈できる。糖質減はこの「なだらかさ」に加えてΔピークも固形並み（52.3 vs 53.7）まで抑えられている。絶対値が最も低いのは固形で、これは「同時摂取か否か」ではなく「副食が固形かスムージーか」という形態の効果。",
+    { x: MARGIN + 0.3, y: 5.08, w: W - MARGIN * 2 - 0.6, h: 1.6, fontFace: "Calibri", fontSize: 12, color: "0F5C3D", isTextBox: true, margin: 0 }
+  );
+}
+
+// ================= Slide: Athlete fuel perspective =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "PERSPECTIVE", "アスリート視点：血糖値は「リスク」か「燃料」か", false);
+  s.addText(
+    "問題は「血糖が高いこと」自体ではなく①食後低血圧②血糖スパイク＋反応性低血糖という急激な変化。乱高下なく高い水準を維持できるなら、それは燃料が豊富な望ましい状態とも言える。",
+    { x: MARGIN, y: 1.6, w: W - MARGIN * 2, h: 0.5, fontFace: "Calibri", fontSize: 12, color: MUTED, isTextBox: true, margin: 0 }
+  );
+
+  const fuelConds = ["固形", "スムージー", "おにぎり+スムージー", "おにぎり+糖質減"];
+  const fuelColors = [C_SOLID, C_SMOOTHIE, C_ONIGISMO, C_LOWSUGAR];
+
+  const fuelPanelW = 5.8;
+  function smallBarPanel(x, titleMain, titleSub, values, fmt) {
+    s.addText(titleMain, { x, y: 2.15, w: fuelPanelW, h: 0.28, fontFace: "Calibri", fontSize: 12.5, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addText(titleSub, { x, y: 2.43, w: fuelPanelW, h: 0.24, fontFace: "Calibri", fontSize: 10, color: MUTED, isTextBox: true, margin: 0 });
+    s.addChart("bar", [{ name: titleMain, labels: fuelConds, values }], {
+      x, y: 2.72, w: fuelPanelW, h: 2.15,
+      barDir: "col",
+      chartColors: fuelColors,
+      chartColorsOpacity: 100,
+      showTitle: false, showLegend: false,
+      showValue: true, dataLabelPosition: "outEnd", dataLabelFontSize: 10.5, dataLabelColor: INK,
+      dataLabelFormatCode: fmt,
+      catAxisLabelColor: MUTED, catAxisLabelFontSize: 9.5, catAxisLabelRotate: 20,
+      valAxisHidden: true,
+      catGridLine: { style: "none" }, valGridLine: { style: "none" },
+      catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB",
+      barGapWidthPct: 35
+    });
+  }
+  smallBarPanel(MARGIN, "トレーニング時間帯(11:00-14:00)の平均血糖", "＝燃料供給 (mg/dL)", [135.1, 222.1, 220.1, 229.4], "#,##0");
+  smallBarPanel(W - MARGIN - fuelPanelW, "ピーク後の最小値−ベースライン", "クラッシュ（反応性低血糖）の有無 (mg/dL)", [20.0, 47.7, 18.3, 47.7], "#,##0");
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.15, w: W - MARGIN * 2, h: 1.65, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  const fuelNotes = [
+    "クラッシュ（反応性低血糖）は4条件とも起きていない：ピーク後の最小値はベースラインを+18〜48上回る",
+    "固形は候補から外れる：練習中の血糖が他条件の約6割（135 vs 220〜229）＝燃料不足の可能性",
+    "糖質減は練習中の血糖がむしろ4条件中最高。ただし持久力・爆発力の自己評価は最低という矛盾があり要検証",
+  ];
+  let fy = 5.32;
+  fuelNotes.forEach(n => {
+    s.addText("•  " + n, { x: MARGIN + 0.3, y: fy, w: W - MARGIN * 2 - 0.6, h: 0.45, fontFace: "Calibri", fontSize: 12, color: "0F5C3D", isTextBox: true, margin: 0 });
+    fy += 0.48;
+  });
+}
+
 // ================= Slide 9: Condition survey =================
 {
   const s = pres.addSlide();
@@ -479,19 +564,19 @@ comparisonSlide(
     });
   }
   tradeCard(MARGIN, "おにぎり＋スムージー（糖質ノーマル）", C_ONIGISMO, [
-    "血糖の乱高下（CV）が4条件中最小",
+    "血糖の乱高下（CV）が4条件中最小、練習中の燃料供給も十分（220）",
     "持久力の自己評価が4条件中最高（3.83）",
     "消化器症状も軽微"
   ]);
   tradeCard(MARGIN + colW + 0.4, "おにぎり＋糖質減", C_LOWSUGAR, [
+    "波形が最もなだらか、練習中の燃料供給はむしろ4条件中最高（229）",
     "起床時コンディション・睡眠の質が4条件中最高",
-    "iAUC 2hが約39%減少（血糖面で最良）",
-    "持久力・爆発力の自己評価は4条件中最低"
+    "一方で持久力・爆発力の自己評価は4条件中最低（要検証の矛盾）"
   ]);
 
   s.addShape("roundRect", { x: MARGIN, y: 5.7, w: W - MARGIN * 2, h: 1.3, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
   s.addText(
-    "✓ 総合評価：現時点のデータでは「おにぎり＋スムージー（糖質ノーマル）」が最もバランスの良い候補。「おにぎり＋糖質減」は血糖・睡眠面で優れるが、持久力・爆発力の低下が見られるため、強度の高い練習日には慎重な適用が望ましい。",
+    "✓ 総合評価：現時点のデータでは「おにぎり＋スムージー（糖質ノーマル、同時摂取）」が最もバランスの良い候補。「おにぎり＋糖質減」は血糖面（なだらかさ・燃料供給とも）ではむしろ優れており、体感（持久力低下）との矛盾を解消できれば第一候補に上がる可能性もある。",
     { x: MARGIN + 0.3, y: 5.9, w: W - MARGIN * 2 - 0.6, h: 0.95, fontFace: "Calibri", fontSize: 12.5, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 }
   );
 }
@@ -503,9 +588,9 @@ comparisonSlide(
   titleBlock(s, "CONCLUSION", "結論と次のステップ", true);
 
   const concl = [
-    "おにぎりを崩さず副食のみ液状化する方針は、血糖の観点からも妥当（②の結果）",
-    "総糖質量の最適化（糖質減食）は血糖面では明確に効果あり（iAUC 2h ▼39%）が、持久力・爆発力はトレードオフの兆候あり",
-    "総合評価：現時点では「おにぎり＋スムージー（糖質ノーマル）」が最もバランスの良い候補",
+    "おにぎりを崩さず副食と同時に食べる方針は血糖の観点から一貫して支持される：乱高下を抑えつつ、練習中の燃料供給も確保できる",
+    "固形は「血糖が安定」ではなく「練習中の燃料不足」（練習中平均135、他条件の約6割）と解釈すべき",
+    "総合評価：現時点では「おにぎり＋スムージー（糖質ノーマル、同時摂取）」が最もバランスの良い候補",
   ];
   let y = 1.9;
   concl.forEach((c, i) => {

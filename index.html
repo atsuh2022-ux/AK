@@ -637,7 +637,7 @@
 <div class="wrap" id="mainWrap">
   <header class="top">
     <h1>当日の摂取計画ワークシート</h1>
-    <p class="subtitle">試合時間に合わせて、自分の当日プランを埋めていきましょう</p>
+    <p class="subtitle">競技時間に合わせて、自分の当日プランを埋めていきましょう</p>
     <div class="progress-row">
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-label" id="progressLabel">0 / 4 記入</div>
@@ -648,11 +648,11 @@
     <p>真ん中の「記入例」を参考にしながら、それぞれの欄に当日の食事・水分補給プランを書き込んでください。入力内容はこの端末に自動で保存されます。</p>
     <div class="fields">
       <div class="field"><label for="fName">氏名</label><input id="fName" type="text" autocomplete="off"></div>
-      <div class="field"><label for="fEvent">試合種目</label><input id="fEvent" type="text" autocomplete="off"></div>
+      <div class="field"><label for="fEvent">競技種目</label><input id="fEvent" type="text" autocomplete="off"></div>
       <div class="field full">
-        <label for="fTime">試合時刻</label>
+        <label for="fTime">競技時刻</label>
         <input id="fTime" type="text" placeholder="例：11:00" autocomplete="off">
-        <p class="field-hint">入力すると、下の朝食・補食・試合直前・試合直後の時刻が自動で計算されます</p>
+        <p class="field-hint">入力すると、下の朝食・補食・競技直前・競技直後の時刻が自動で計算されます</p>
       </div>
       <div class="field full">
         <label for="fWeight">体重（kg）<span class="field-optional">任意</span></label>
@@ -674,7 +674,7 @@
   <div class="timeline" id="timeline"></div>
 
   <button class="add-event-btn" id="addEventBtn" type="button">＋ 項目を追加</button>
-  <p class="add-event-hint">試合が午後・夕方の場合など、昼食や待機時間なども自由に追加できます</p>
+  <p class="add-event-hint">競技が午後・夕方の場合など、昼食や待機時間なども自由に追加できます</p>
 
   <div class="card copy-box" id="copyBox">
     <p>お使いの環境では自動保存ができないため、下の内容を長押し・全選択してコピーしてください。</p>
@@ -716,17 +716,17 @@
       ['b', '体重測定・コンディション記録を行う'],
       ['n', '目覚めの水分補給をとる']
     ]},
-    { id: 'breakfast', time: '7:00', name: '朝食（試合4時間前）', ex: [
+    { id: 'breakfast', time: '7:00', name: '朝食（競技4時間前）', ex: [
       ['n', 'ごはん・みそ汁・卵料理・果物など、普段通りの食事をとる'],
       ['n', '主食を中心に。脂質・食物繊維の多いものは控えめに']
     ]},
-    { id: 'snack1', time: '9:00', name: '補食（試合1〜2時間前）', ex: [
-      ['n', 'バナナ・ゼリー・スポーツドリンクなど、消化の良い糖質源をとる']
+    { id: 'snack1', time: '9:00', name: '補食（競技1〜2時間前）', ex: [
+      ['n', 'バナナ・カステラ・ゼリーなど、消化の良い糖質源をとる']
     ]},
-    { id: 'presnack', time: '10:30', name: '試合直前（〜30分前）', ex: [
+    { id: 'presnack', time: '10:30', name: '競技直前（直前〜30分前）', ex: [
       ['n', 'ゼリー飲料＋少量の水分で最終エネルギー補給']
     ]},
-    { id: 'aftergame', time: '', name: '試合直後（30分以内）', ex: [
+    { id: 'aftergame', time: '', name: '競技直後（30分以内）', ex: [
       ['n', 'オレンジジュース＋カステラ、鮭おにぎりなど（糖質＋たんぱく質）を補給']
     ]}
   ];
@@ -1034,7 +1034,7 @@
     if (ev.id === 'breakfast') {
       var mins = parseTimeToMinutes(state.times.breakfast);
       if (mins !== null && Math.floor(mins / 60) >= BREAKFAST_HOUR_CUTOFF) {
-        return '食事（試合4時間前）';
+        return '食事（競技4時間前）';
       }
     }
     return ev.name;
@@ -1108,8 +1108,8 @@
     lines.push('日本パラ陸上 強化合宿｜栄養サポート講義');
     lines.push('');
     lines.push('氏名：' + (state.name || '（未記入）'));
-    lines.push('試合種目：' + (state.event || '（未記入）'));
-    lines.push('試合時刻：' + (state.time || '（未記入）'));
+    lines.push('競技種目：' + (state.event || '（未記入）'));
+    lines.push('競技時刻：' + (state.time || '（未記入）'));
     lines.push('');
     buildOrderedRows().forEach(function (r) {
       lines.push('[' + (r.time || '時刻未記入') + '] ' + r.name);
@@ -1275,7 +1275,7 @@
     var metaParts = [];
     if (state.name) metaParts.push('氏名：' + state.name);
     if (state.event) metaParts.push('種目：' + state.event);
-    if (state.time) metaParts.push('試合時刻：' + state.time);
+    if (state.time) metaParts.push('競技時刻：' + state.time);
     summaryMeta.textContent = metaParts.join('　');
 
     renderPrepList();

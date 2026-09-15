@@ -290,6 +290,11 @@
     margin: 0 0 4px;
     letter-spacing: 0.03em;
   }
+  .plan-hint {
+    font-size: 11px;
+    color: var(--orange);
+    margin: -2px 0 6px;
+  }
 
   .custom-head { align-items: center; }
   .custom-name-input {
@@ -708,15 +713,32 @@
     return rail;
   }
 
-  function makePlanField(id, value, onInput) {
+  // Per-event overrides for the "あなたのプラン" field.
+  var PLAN_FIELD_OPTS = {
+    snack1: {
+      placeholder: '例：バナナ、ゼリー飲料',
+      hint: '食べるものを単語で書いてください（区切りは「、」）'
+    }
+  };
+
+  function makePlanField(id, value, onInput, opts) {
+    opts = opts || {};
+
     var label = document.createElement('p');
     label.className = 'plan-label';
     label.textContent = 'あなたのプラン';
 
+    var hint = null;
+    if (opts.hint) {
+      hint = document.createElement('p');
+      hint.className = 'plan-hint';
+      hint.textContent = opts.hint;
+    }
+
     var ta = document.createElement('textarea');
     ta.className = 'plan';
     ta.id = 'plan-' + id;
-    ta.placeholder = '自分の予定を書いてみましょう';
+    ta.placeholder = opts.placeholder || '自分の予定を書いてみましょう';
     ta.rows = 1;
     ta.value = value || '';
     if (ta.value.trim()) ta.classList.add('filled');
@@ -728,7 +750,7 @@
       scheduleSave();
     });
 
-    return { label: label, textarea: ta };
+    return { label: label, hint: hint, textarea: ta };
   }
 
   function render() {
@@ -751,7 +773,6 @@
       timeInput.id = 'time-' + ev.id;
       timeInput.placeholder = ev.time;
       timeInput.autocomplete = 'off';
-      timeInput.inputMode = 'numeric';
       timeInput.value = state.times[ev.id] || '';
       timeInput.addEventListener('input', function () {
         state.times[ev.id] = timeInput.value;
@@ -777,8 +798,14 @@
       });
       body.appendChild(ul);
 
-      var plan = makePlanField(ev.id, state.answers[ev.id], function (val) { state.answers[ev.id] = val; });
+      var plan = makePlanField(
+        ev.id,
+        state.answers[ev.id],
+        function (val) { state.answers[ev.id] = val; },
+        PLAN_FIELD_OPTS[ev.id]
+      );
       body.appendChild(plan.label);
+      if (plan.hint) body.appendChild(plan.hint);
       body.appendChild(plan.textarea);
 
       row.appendChild(body);
@@ -802,7 +829,6 @@
       timeInput.className = 'time-input mono';
       timeInput.placeholder = '例：13:00';
       timeInput.autocomplete = 'off';
-      timeInput.inputMode = 'numeric';
       timeInput.value = custom.time || '';
       timeInput.addEventListener('input', function () {
         custom.time = timeInput.value;
@@ -865,8 +891,8 @@
 
   function parseTimeToMinutes(v) {
     v = (v || '').trim();
-    var m = /^(\d{1,2})[:：](\d{1,2})$/.exec(v);
-    if (!m) m = /^(\d{1,2})時(\d{1,2})?分?$/.exec(v);
+    var m = /(\d{1,2})[:：](\d{1,2})/.exec(v);
+    if (!m) m = /(\d{1,2})時(\d{1,2})?分?/.exec(v);
     if (!m) return null;
     var h = parseInt(m[1], 10);
     var mnt = m[2] ? parseInt(m[2], 10) : 0;
@@ -937,20 +963,9 @@
     lines.push('試合種目：' + (state.event || '（未記入）'));
     lines.push('試合時刻：' + (state.time || '（未記入）'));
     lines.push('');
-    EVENTS.forEach(function (ev) {
-      var time = (state.times[ev.id] || '').trim();
-      lines.push('[' + (time || '時刻未記入') + '] ' + eventLabel(ev));
-      var plan = (state.answers[ev.id] || '').trim();
-      lines.push('自分のプラン：' + (plan || '（未記入）'));
-      lines.push('');
-    });
-    state.customEvents.forEach(function (custom) {
-      var name = (custom.name || '').trim();
-      var plan = (custom.answer || '').trim();
-      if (!name && !plan) return;
-      var time = (custom.time || '').trim();
-      lines.push('[' + (time || '時刻未記入') + '] ' + (name || '（項目名未設定）'));
-      lines.push('自分のプラン：' + (plan || '（未記入）'));
+    buildOrderedRows().forEach(function (r) {
+      lines.push('[' + (r.time || '時刻未記入') + '] ' + r.name);
+      lines.push('自分のプラン：' + (r.plan || '（未記入）'));
       lines.push('');
     });
     lines.push('事前に用意するものリスト（朝食以外の記入内容より自動作成）');
@@ -1060,30 +1075,53 @@
     return div.innerHTML;
   }
 
-  function buildSummaryScreen() {
-    summaryList.innerHTML = '';
-    EVENTS.forEach(function (ev) {
-      var plan = (state.answers[ev.id] || '').trim();
+  // A unified, time-sorted list combining the fixed events and any custom
+  // ones -- rows with no parseable time sink to the bottom, in the order
+  // they were added.
+  function buildOrderedRows() {
+    var rows = [];
+    EVENTS.forEach(function (ev, idx) {
       var time = (state.times[ev.id] || '').trim();
-      var row = document.createElement('div');
-      row.className = 'summary-row';
-      row.innerHTML =
-        '<span class="summary-time mono' + (time ? '' : ' empty') + '">' + (time ? escapeHtml(time) : '未記入') + '</span>' +
-        '<span class="summary-name">' + escapeHtml(eventLabel(ev)) + '</span>' +
-        '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
-      summaryList.appendChild(row);
+      rows.push({
+        time: time,
+        sortMinutes: parseTimeToMinutes(time),
+        name: eventLabel(ev),
+        plan: (state.answers[ev.id] || '').trim(),
+        order: idx
+      });
     });
-    state.customEvents.forEach(function (custom) {
+    state.customEvents.forEach(function (custom, idx) {
       var name = (custom.name || '').trim();
       var plan = (custom.answer || '').trim();
       if (!name && !plan) return;
       var time = (custom.time || '').trim();
+      rows.push({
+        time: time,
+        sortMinutes: parseTimeToMinutes(time),
+        name: name || '（項目名未設定）',
+        plan: plan,
+        order: EVENTS.length + idx
+      });
+    });
+    rows.sort(function (a, b) {
+      var aHas = a.sortMinutes !== null;
+      var bHas = b.sortMinutes !== null;
+      if (aHas && bHas) return (a.sortMinutes - b.sortMinutes) || (a.order - b.order);
+      if (aHas !== bHas) return aHas ? -1 : 1;
+      return a.order - b.order;
+    });
+    return rows;
+  }
+
+  function buildSummaryScreen() {
+    summaryList.innerHTML = '';
+    buildOrderedRows().forEach(function (r) {
       var row = document.createElement('div');
       row.className = 'summary-row';
       row.innerHTML =
-        '<span class="summary-time mono' + (time ? '' : ' empty') + '">' + (time ? escapeHtml(time) : '未記入') + '</span>' +
-        '<span class="summary-name">' + (name ? escapeHtml(name) : '（項目名未設定）') + '</span>' +
-        '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
+        '<span class="summary-time mono' + (r.time ? '' : ' empty') + '">' + (r.time ? escapeHtml(r.time) : '未記入') + '</span>' +
+        '<span class="summary-name">' + escapeHtml(r.name) + '</span>' +
+        '<span class="summary-answer' + (r.plan ? '' : ' empty') + '">' + (r.plan ? escapeHtml(r.plan) : '未記入') + '</span>';
       summaryList.appendChild(row);
     });
     var metaParts = [];

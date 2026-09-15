@@ -291,6 +291,54 @@
     letter-spacing: 0.03em;
   }
 
+  .custom-head { align-items: center; }
+  .custom-name-input {
+    font: inherit;
+    font-size: 15.5px;
+    font-weight: 900;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px dashed var(--input-border);
+    padding: 0 0 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .custom-name-input::placeholder { color: var(--muted); font-weight: 700; }
+  .custom-name-input:focus-visible { outline: none; border-bottom-color: var(--focus); }
+
+  .custom-delete {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cat-n);
+    background: transparent;
+    border: 1px solid var(--input-border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .add-event-btn {
+    width: 100%;
+    margin-top: 4px;
+    padding: 12px;
+    background: var(--surface);
+    border: 1.5px dashed var(--input-border);
+    border-radius: 12px;
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .add-event-btn:active { background: var(--surface-rail); }
+  .add-event-hint {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin: 8px 0 0;
+  }
+
   footer.bar {
     margin-top: 24px;
     margin-inline: -16px;
@@ -543,6 +591,9 @@
 
   <div class="timeline" id="timeline"></div>
 
+  <button class="add-event-btn" id="addEventBtn" type="button">＋ 項目を追加</button>
+  <p class="add-event-hint">試合が午後・夕方の場合など、昼食や待機時間なども自由に追加できます</p>
+
   <div class="card copy-box" id="copyBox">
     <p>お使いの環境では自動保存ができないため、下の内容を長押し・全選択してコピーしてください。</p>
     <textarea id="copyText" readonly></textarea>
@@ -603,7 +654,7 @@
   ];
 
   var STORAGE_KEY = 'apw-worksheet-v1';
-  var state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {} };
+  var state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {}, customEvents: [] };
 
   function loadLocal() {
     try {
@@ -626,13 +677,17 @@
   var saveStatus = document.getElementById('saveStatus');
 
   function updateProgress() {
+    var total = EVENTS.length + state.customEvents.length;
     var filled = 0;
     EVENTS.forEach(function (ev) {
       if ((state.answers[ev.id] || '').trim().length > 0) filled++;
     });
-    var pct = Math.round((filled / EVENTS.length) * 100);
+    state.customEvents.forEach(function (c) {
+      if ((c.answer || '').trim().length > 0) filled++;
+    });
+    var pct = Math.round((filled / total) * 100);
     progressFill.style.width = pct + '%';
-    progressLabel.textContent = filled + ' / ' + EVENTS.length + ' 記入';
+    progressLabel.textContent = filled + ' / ' + total + ' 記入';
   }
 
   var saveTimer = null;
@@ -650,16 +705,43 @@
     ta.style.height = (ta.scrollHeight) + 'px';
   }
 
+  function makeRail() {
+    var rail = document.createElement('div');
+    rail.className = 'rail';
+    rail.innerHTML = '<div class="line top"></div><div class="node"></div><div class="line bottom"></div>';
+    return rail;
+  }
+
+  function makePlanField(id, value, onInput) {
+    var label = document.createElement('p');
+    label.className = 'plan-label';
+    label.textContent = 'あなたのプラン';
+
+    var ta = document.createElement('textarea');
+    ta.className = 'plan';
+    ta.id = 'plan-' + id;
+    ta.placeholder = '自分の予定を書いてみましょう';
+    ta.rows = 1;
+    ta.value = value || '';
+    if (ta.value.trim()) ta.classList.add('filled');
+    ta.addEventListener('input', function () {
+      onInput(ta.value);
+      ta.classList.toggle('filled', ta.value.trim().length > 0);
+      autoGrow(ta);
+      updateProgress();
+      scheduleSave();
+    });
+
+    return { label: label, textarea: ta };
+  }
+
   function render() {
     timelineEl.innerHTML = '';
+
     EVENTS.forEach(function (ev) {
       var row = document.createElement('div');
       row.className = 'event';
-
-      var rail = document.createElement('div');
-      rail.className = 'rail';
-      rail.innerHTML = '<div class="line top"></div><div class="node"></div><div class="line bottom"></div>';
-      row.appendChild(rail);
+      row.appendChild(makeRail());
 
       var body = document.createElement('div');
       body.className = 'event-body';
@@ -699,32 +781,85 @@
       });
       body.appendChild(ul);
 
-      var label = document.createElement('p');
-      label.className = 'plan-label';
-      label.textContent = 'あなたのプラン';
-      body.appendChild(label);
-
-      var ta = document.createElement('textarea');
-      ta.className = 'plan';
-      ta.id = 'plan-' + ev.id;
-      ta.placeholder = '自分の予定を書いてみましょう';
-      ta.rows = 1;
-      ta.value = state.answers[ev.id] || '';
-      if (ta.value.trim()) ta.classList.add('filled');
-      ta.addEventListener('input', function () {
-        state.answers[ev.id] = ta.value;
-        ta.classList.toggle('filled', ta.value.trim().length > 0);
-        autoGrow(ta);
-        updateProgress();
-        scheduleSave();
-      });
-      body.appendChild(ta);
+      var plan = makePlanField(ev.id, state.answers[ev.id], function (val) { state.answers[ev.id] = val; });
+      body.appendChild(plan.label);
+      body.appendChild(plan.textarea);
 
       row.appendChild(body);
       timelineEl.appendChild(row);
-
-      requestAnimationFrame(function () { autoGrow(ta); });
+      requestAnimationFrame(function () { autoGrow(plan.textarea); });
     });
+
+    state.customEvents.forEach(function (custom) {
+      var row = document.createElement('div');
+      row.className = 'event';
+      row.appendChild(makeRail());
+
+      var body = document.createElement('div');
+      body.className = 'event-body';
+
+      var head = document.createElement('div');
+      head.className = 'event-head custom-head';
+
+      var timeInput = document.createElement('input');
+      timeInput.type = 'text';
+      timeInput.className = 'time-input mono';
+      timeInput.placeholder = '例：13:00';
+      timeInput.autocomplete = 'off';
+      timeInput.inputMode = 'numeric';
+      timeInput.value = custom.time || '';
+      timeInput.addEventListener('input', function () {
+        custom.time = timeInput.value;
+        scheduleSave();
+      });
+      head.appendChild(timeInput);
+
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'custom-name-input';
+      nameInput.placeholder = '項目名（例：昼食、待機時間など）';
+      nameInput.autocomplete = 'off';
+      nameInput.value = custom.name || '';
+      nameInput.addEventListener('input', function () {
+        custom.name = nameInput.value;
+        scheduleSave();
+      });
+      head.appendChild(nameInput);
+
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'custom-delete';
+      delBtn.textContent = '削除';
+      delBtn.setAttribute('aria-label', 'この項目を削除');
+      delBtn.addEventListener('click', function () {
+        state.customEvents = state.customEvents.filter(function (c) { return c.id !== custom.id; });
+        scheduleSave();
+        render();
+        updateProgress();
+      });
+      head.appendChild(delBtn);
+
+      body.appendChild(head);
+
+      var plan = makePlanField(custom.id, custom.answer, function (val) { custom.answer = val; });
+      body.appendChild(plan.label);
+      body.appendChild(plan.textarea);
+
+      row.appendChild(body);
+      timelineEl.appendChild(row);
+      requestAnimationFrame(function () { autoGrow(plan.textarea); });
+    });
+  }
+
+  function addCustomEvent() {
+    var id = 'custom-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    state.customEvents.push({ id: id, time: '', name: '', answer: '' });
+    scheduleSave();
+    render();
+    updateProgress();
+    var newNameInput = timelineEl.querySelectorAll('.custom-name-input');
+    var last = newNameInput[newNameInput.length - 1];
+    if (last) last.focus();
   }
 
   // Minutes to subtract from match time for each auto-calculated event.
@@ -813,6 +948,15 @@
       lines.push('自分のプラン：' + (plan || '（未記入）'));
       lines.push('');
     });
+    state.customEvents.forEach(function (custom) {
+      var name = (custom.name || '').trim();
+      var plan = (custom.answer || '').trim();
+      if (!name && !plan) return;
+      var time = (custom.time || '').trim();
+      lines.push('[' + (time || '時刻未記入') + '] ' + (name || '（項目名未設定）'));
+      lines.push('自分のプラン：' + (plan || '（未記入）'));
+      lines.push('');
+    });
     lines.push('事前に用意するものリスト（朝食以外の記入内容より自動作成）');
     var prepItems = buildPrepList();
     if (prepItems.length === 0) {
@@ -832,7 +976,7 @@
   var resetBtn = document.getElementById('resetBtn');
   resetBtn.addEventListener('click', function () {
     if (!confirm('入力した内容をすべて消去します。よろしいですか？')) return;
-    state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {} };
+    state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {}, customEvents: [] };
     saveLocal();
     render();
     bindFields();
@@ -840,6 +984,8 @@
     saveStatus.textContent = 'リセットしました';
     document.getElementById('copyBox').classList.remove('show');
   });
+
+  document.getElementById('addEventBtn').addEventListener('click', addCustomEvent);
 
   var saveBtn = document.getElementById('saveBtn');
   var copyBox = document.getElementById('copyBox');
@@ -931,6 +1077,19 @@
         '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
       summaryList.appendChild(row);
     });
+    state.customEvents.forEach(function (custom) {
+      var name = (custom.name || '').trim();
+      var plan = (custom.answer || '').trim();
+      if (!name && !plan) return;
+      var time = (custom.time || '').trim();
+      var row = document.createElement('div');
+      row.className = 'summary-row';
+      row.innerHTML =
+        '<span class="summary-time mono' + (time ? '' : ' empty') + '">' + (time ? escapeHtml(time) : '未記入') + '</span>' +
+        '<span class="summary-name">' + (name ? escapeHtml(name) : '（項目名未設定）') + '</span>' +
+        '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
+      summaryList.appendChild(row);
+    });
     var metaParts = [];
     if (state.name) metaParts.push('氏名：' + state.name);
     if (state.event) metaParts.push('種目：' + state.event);
@@ -950,9 +1109,9 @@
   function buildPrepList() {
     var byKey = {};
     var order = [];
-    EVENTS.forEach(function (ev) {
-      if (PREP_EXCLUDE_IDS.indexOf(ev.id) !== -1) return;
-      var text = (state.answers[ev.id] || '').trim();
+
+    function addText(text) {
+      text = (text || '').trim();
       if (!text) return;
       text.split(PREP_SPLIT_RE).forEach(function (part) {
         var trimmed = part.trim();
@@ -964,7 +1123,14 @@
         }
         byKey[key].count += 1;
       });
+    }
+
+    EVENTS.forEach(function (ev) {
+      if (PREP_EXCLUDE_IDS.indexOf(ev.id) !== -1) return;
+      addText(state.answers[ev.id]);
     });
+    state.customEvents.forEach(function (custom) { addText(custom.answer); });
+
     return order.map(function (key) { return byKey[key]; });
   }
 
@@ -1063,6 +1229,7 @@
       state.answers = restored.answers || {};
       state.times = restored.times || {};
       state.prepQty = restored.prepQty || {};
+      state.customEvents = restored.customEvents || [];
     }
     render();
     bindFields();

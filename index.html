@@ -566,7 +566,7 @@
     <p class="subtitle">試合時間に合わせて、自分の当日プランを埋めていきましょう</p>
     <div class="progress-row">
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-label" id="progressLabel">0 / 6 記入</div>
+      <div class="progress-label" id="progressLabel">0 / 5 記入</div>
     </div>
   </header>
 
@@ -629,7 +629,7 @@
 <script>
 (function () {
   var EVENTS = [
-    { id: 'wake', time: '6:30', name: '起床', ex: [
+    { id: 'wake', time: '', name: '起床', ex: [
       ['b', '体重測定・コンディション記録を行う'],
       ['n', '目覚めの水分補給をとる']
     ]},
@@ -637,17 +637,13 @@
       ['n', 'ごはん・みそ汁・卵料理・果物など、普段通りの食事をとる'],
       ['n', '主食を中心に。脂質・食物繊維の多いものは控えめに']
     ]},
-    { id: 'move', time: '8:00', name: '会場への移動', ex: [
-      ['h', 'こまめな水分補給を心がける'],
-      ['h', 'アイスベストなど暑熱対策グッズを準備する']
-    ]},
     { id: 'snack1', time: '9:00', name: '補食（試合1〜2時間前）', ex: [
       ['n', 'バナナ・ゼリー・スポーツドリンクなど、消化の良い糖質源をとる']
     ]},
     { id: 'presnack', time: '10:30', name: '試合直前（〜30分前）', ex: [
       ['n', 'ゼリー飲料＋少量の水分で最終エネルギー補給']
     ]},
-    { id: 'aftergame', time: '〜11:30', name: '試合直後（30分以内）', ex: [
+    { id: 'aftergame', time: '', name: '試合直後（30分以内）', ex: [
       ['n', 'オレンジジュース＋カステラ、鮭おにぎりなど（糖質＋たんぱく質）を補給'],
       ['h', '冷たい飲料で体の内部から冷やす']
     ]}

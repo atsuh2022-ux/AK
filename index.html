@@ -161,6 +161,16 @@
   }
   .field input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   .field-hint { font-size: 10.5px; color: var(--muted); margin: 4px 0 0; }
+  .field-optional {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface-rail);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin-left: 6px;
+    letter-spacing: 0;
+  }
 
   @media (max-width: 380px) {
     .fields { grid-template-columns: 1fr; }
@@ -295,6 +305,46 @@
     color: var(--orange);
     margin: -2px 0 6px;
   }
+
+  .carb-note {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface-rail);
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin: 0 0 8px;
+  }
+  .carb-note.has-value { color: var(--navy); }
+
+  .carb-ref {
+    margin: 0 0 10px;
+  }
+  .carb-ref summary {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .carb-ref-list {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 8px 10px;
+    background: var(--surface-rail);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .carb-ref-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .carb-ref-g { color: var(--ink); font-weight: 700; }
 
   .custom-head { align-items: center; }
   .custom-name-input {
@@ -590,6 +640,11 @@
         <input id="fTime" type="text" placeholder="例：11:00" autocomplete="off">
         <p class="field-hint">入力すると、下の朝食・補食・試合直前・試合直後の時刻が自動で計算されます</p>
       </div>
+      <div class="field full">
+        <label for="fWeight">体重（kg）<span class="field-optional">任意</span></label>
+        <input id="fWeight" type="text" inputmode="decimal" placeholder="例：50" autocomplete="off">
+        <p class="field-hint">入力すると、下の「食事（試合4時間前）」欄に目標糖質量の目安が表示されます</p>
+      </div>
     </div>
   </section>
 
@@ -660,7 +715,7 @@
   ];
 
   var STORAGE_KEY = 'apw-worksheet-v1';
-  var state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {}, customEvents: [] };
+  var state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {}, customEvents: [], weight: '' };
 
   function loadLocal() {
     try {
@@ -806,6 +861,28 @@
       });
       body.appendChild(ul);
 
+      if (ev.id === 'breakfast') {
+        var carbNote = document.createElement('p');
+        carbNote.className = 'carb-note';
+        carbNote.id = 'carbTargetNote';
+        body.appendChild(carbNote);
+
+        var refWrap = document.createElement('details');
+        refWrap.className = 'carb-ref';
+        var refSummary = document.createElement('summary');
+        refSummary.textContent = '参考：食品ごとの糖質量の目安';
+        refWrap.appendChild(refSummary);
+        var refList = document.createElement('ul');
+        refList.className = 'carb-ref-list';
+        CARB_FOOD_REF.forEach(function (pair) {
+          var li = document.createElement('li');
+          li.innerHTML = '<span>' + pair[0] + '</span><span class="carb-ref-g mono">' + pair[1] + '</span>';
+          refList.appendChild(li);
+        });
+        refWrap.appendChild(refList);
+        body.appendChild(refWrap);
+      }
+
       var plan = makePlanField(
         ev.id,
         state.answers[ev.id],
@@ -879,6 +956,8 @@
       timelineEl.appendChild(row);
       requestAnimationFrame(function () { autoGrow(plan.textarea); });
     });
+
+    updateCarbNote();
   }
 
   function addCustomEvent() {
@@ -947,18 +1026,58 @@
     });
   }
 
+  // Sports nutrition guideline: 1-4 hours before competition, total carb
+  // intake of roughly 1-4 g per kg body weight is recommended.
+  var CARB_PER_KG_LOW = 1;
+  var CARB_PER_KG_HIGH = 4;
+
+  function computeCarbTarget() {
+    var w = parseFloat(state.weight);
+    if (!w || w <= 0) return null;
+    return { low: Math.round(w * CARB_PER_KG_LOW), high: Math.round(w * CARB_PER_KG_HIGH) };
+  }
+
+  function updateCarbNote() {
+    var el = document.getElementById('carbTargetNote');
+    if (!el) return;
+    var target = computeCarbTarget();
+    el.textContent = target
+      ? '目標糖質量の目安：' + target.low + '〜' + target.high + 'g（体重1kgあたり1〜4gで計算）'
+      : '体重を入力すると、ここに目標糖質量の目安が表示されます';
+    el.classList.toggle('has-value', !!target);
+  }
+
+  // Rough, brand/size-independent estimates for quick self-checking against
+  // the target above -- not a precise nutrition database.
+  var CARB_FOOD_REF = [
+    ['バナナ（1本）', '約23g'],
+    ['おにぎり（1個）', '約40g'],
+    ['ゼリー飲料（180g）', '約40g'],
+    ['カステラ（1切れ）', '約20g'],
+    ['あんパン（1個）', '約45g'],
+    ['オレンジジュース（200ml）', '約20g'],
+    ['食パン（6枚切り1枚）', '約26g']
+  ];
+
   function bindFields() {
     var fName = document.getElementById('fName');
     var fEvent = document.getElementById('fEvent');
     var fTime = document.getElementById('fTime');
+    var fWeight = document.getElementById('fWeight');
     fName.value = state.name || '';
     fEvent.value = state.event || '';
     fTime.value = state.time || '';
+    fWeight.value = state.weight || '';
     fName.addEventListener('input', function () { state.name = fName.value; scheduleSave(); });
     fEvent.addEventListener('input', function () { state.event = fEvent.value; scheduleSave(); });
     fTime.addEventListener('input', function () {
       state.time = fTime.value;
       recalcEventTimesFromMatchTime();
+      scheduleSave();
+    });
+    fWeight.addEventListener('input', function () {
+      state.weight = fWeight.value;
+      updateCarbNote();
       scheduleSave();
     });
   }
@@ -996,7 +1115,7 @@
   var resetBtn = document.getElementById('resetBtn');
   resetBtn.addEventListener('click', function () {
     if (!confirm('入力した内容をすべて消去します。よろしいですか？')) return;
-    state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {}, customEvents: [] };
+    state = { name: '', event: '', time: '', answers: {}, times: {}, prepQty: {}, customEvents: [], weight: '' };
     saveLocal();
     render();
     bindFields();
@@ -1273,6 +1392,7 @@
       state.times = restored.times || {};
       state.prepQty = restored.prepQty || {};
       state.customEvents = restored.customEvents || [];
+      state.weight = restored.weight || '';
     }
     render();
     bindFields();

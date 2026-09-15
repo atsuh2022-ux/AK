@@ -683,7 +683,8 @@
 
       var nameSpan = document.createElement('span');
       nameSpan.className = 'event-name';
-      nameSpan.textContent = ev.name;
+      nameSpan.id = 'name-' + ev.id;
+      nameSpan.textContent = eventLabel(ev);
       head.appendChild(nameSpan);
 
       body.appendChild(head);
@@ -756,6 +757,28 @@
       var input = document.getElementById('time-' + id);
       if (input) input.value = derived;
     });
+    updateDynamicLabels();
+  }
+
+  // For an afternoon match, the "4 hours before" meal is really lunch,
+  // not breakfast -- swap the label once we can tell from the computed time.
+  var BREAKFAST_HOUR_CUTOFF = 10;
+
+  function eventLabel(ev) {
+    if (ev.id === 'breakfast') {
+      var mins = parseTimeToMinutes(state.times.breakfast);
+      if (mins !== null && Math.floor(mins / 60) >= BREAKFAST_HOUR_CUTOFF) {
+        return '食事（試合4時間前）';
+      }
+    }
+    return ev.name;
+  }
+
+  function updateDynamicLabels() {
+    EVENTS.forEach(function (ev) {
+      var el = document.getElementById('name-' + ev.id);
+      if (el) el.textContent = eventLabel(ev);
+    });
   }
 
   function bindFields() {
@@ -785,7 +808,7 @@
     lines.push('');
     EVENTS.forEach(function (ev) {
       var time = (state.times[ev.id] || '').trim();
-      lines.push('[' + (time || '時刻未記入') + '] ' + ev.name);
+      lines.push('[' + (time || '時刻未記入') + '] ' + eventLabel(ev));
       var plan = (state.answers[ev.id] || '').trim();
       lines.push('自分のプラン：' + (plan || '（未記入）'));
       lines.push('');
@@ -905,7 +928,7 @@
       row.className = 'summary-row';
       row.innerHTML =
         '<span class="summary-time mono' + (time ? '' : ' empty') + '">' + (time ? escapeHtml(time) : '未記入') + '</span>' +
-        '<span class="summary-name">' + escapeHtml(ev.name) + '</span>' +
+        '<span class="summary-name">' + escapeHtml(eventLabel(ev)) + '</span>' +
         '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
       summaryList.appendChild(row);
     });

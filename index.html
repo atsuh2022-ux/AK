@@ -172,6 +172,20 @@
     letter-spacing: 0;
   }
 
+  .weight-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .weight-row input { flex: 1; min-width: 0; }
+  .weight-carb-result {
+    flex: 0 0 auto;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface-rail);
+    border-radius: 8px;
+    padding: 9px 10px;
+    white-space: nowrap;
+  }
+  .weight-carb-result.has-value { color: var(--navy); }
+
   @media (max-width: 380px) {
     .fields { grid-template-columns: 1fr; }
   }
@@ -626,7 +640,7 @@
     <p class="subtitle">試合時間に合わせて、自分の当日プランを埋めていきましょう</p>
     <div class="progress-row">
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-label" id="progressLabel">0 / 5 記入</div>
+      <div class="progress-label" id="progressLabel">0 / 4 記入</div>
     </div>
   </header>
 
@@ -642,8 +656,11 @@
       </div>
       <div class="field full">
         <label for="fWeight">体重（kg）<span class="field-optional">任意</span></label>
-        <input id="fWeight" type="text" inputmode="decimal" placeholder="例：50" autocomplete="off">
-        <p class="field-hint">入力すると、下の「食事（試合4時間前）」欄に目標糖質量の目安が表示されます</p>
+        <div class="weight-row">
+          <input id="fWeight" type="text" inputmode="decimal" placeholder="例：50" autocomplete="off">
+          <span class="weight-carb-result" id="weightCarbResult"></span>
+        </div>
+        <p class="field-hint">競技前の食事と補食で、この範囲以上の糖質を摂取できるように計画立てましょう</p>
       </div>
     </div>
   </section>
@@ -737,10 +754,14 @@
   var progressLabel = document.getElementById('progressLabel');
   var saveStatus = document.getElementById('saveStatus');
 
+  // 起床 has no plan field of its own, so it doesn't count toward progress.
+  var PROGRESS_EXCLUDE_IDS = ['wake'];
+
   function updateProgress() {
-    var total = EVENTS.length + state.customEvents.length;
+    var countableEvents = EVENTS.filter(function (ev) { return PROGRESS_EXCLUDE_IDS.indexOf(ev.id) === -1; });
+    var total = countableEvents.length + state.customEvents.length;
     var filled = 0;
-    EVENTS.forEach(function (ev) {
+    countableEvents.forEach(function (ev) {
       if ((state.answers[ev.id] || '').trim().length > 0) filled++;
     });
     state.customEvents.forEach(function (c) {
@@ -861,12 +882,7 @@
       });
       body.appendChild(ul);
 
-      if (ev.id === 'breakfast') {
-        var carbNote = document.createElement('p');
-        carbNote.className = 'carb-note';
-        carbNote.id = 'carbTargetNote';
-        body.appendChild(carbNote);
-
+      if (ev.id === 'snack1') {
         var refWrap = document.createElement('details');
         refWrap.className = 'carb-ref';
         var refSummary = document.createElement('summary');
@@ -883,19 +899,24 @@
         body.appendChild(refWrap);
       }
 
-      var plan = makePlanField(
-        ev.id,
-        state.answers[ev.id],
-        function (val) { state.answers[ev.id] = val; },
-        PLAN_FIELD_OPTS[ev.id]
-      );
-      body.appendChild(plan.label);
-      if (plan.hint) body.appendChild(plan.hint);
-      body.appendChild(plan.textarea);
+      if (ev.id !== 'wake') {
+        var plan = makePlanField(
+          ev.id,
+          state.answers[ev.id],
+          function (val) { state.answers[ev.id] = val; },
+          PLAN_FIELD_OPTS[ev.id]
+        );
+        body.appendChild(plan.label);
+        if (plan.hint) body.appendChild(plan.hint);
+        body.appendChild(plan.textarea);
+      }
 
       row.appendChild(body);
       timelineEl.appendChild(row);
-      requestAnimationFrame(function () { autoGrow(plan.textarea); });
+      if (plan) {
+        var planTa = plan.textarea;
+        requestAnimationFrame(function () { autoGrow(planTa); });
+      }
     });
 
     state.customEvents.forEach(function (custom) {
@@ -1026,10 +1047,11 @@
     });
   }
 
-  // Sports nutrition guideline: 1-4 hours before competition, total carb
-  // intake of roughly 1-4 g per kg body weight is recommended.
+  // Sports nutrition guideline: in the run-up to competition, total carb
+  // intake of roughly 1-2 g per kg body weight (combined across the
+  // pre-match meal and snack) is a reasonable minimum to plan around.
   var CARB_PER_KG_LOW = 1;
-  var CARB_PER_KG_HIGH = 4;
+  var CARB_PER_KG_HIGH = 2;
 
   function computeCarbTarget() {
     var w = parseFloat(state.weight);
@@ -1038,12 +1060,10 @@
   }
 
   function updateCarbNote() {
-    var el = document.getElementById('carbTargetNote');
+    var el = document.getElementById('weightCarbResult');
     if (!el) return;
     var target = computeCarbTarget();
-    el.textContent = target
-      ? '目標糖質量の目安：' + target.low + '〜' + target.high + 'g（体重1kgあたり1〜4gで計算）'
-      : '体重を入力すると、ここに目標糖質量の目安が表示されます';
+    el.textContent = target ? target.low + '〜' + target.high + 'g' : '';
     el.classList.toggle('has-value', !!target);
   }
 

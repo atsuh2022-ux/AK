@@ -640,6 +640,11 @@
     font-weight: 700;
     text-decoration: underline;
   }
+  .feedback-name {
+    display: inline-block;
+    margin-top: 4px;
+    color: var(--muted);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .progress-fill { transition: none; }
@@ -718,7 +723,8 @@
   <div class="summary-footer">
     <p class="feedback-note">
       上記の計画に対してフィードバックが欲しい方・ご相談ごとがある方は、下記へスクリーンショットとともにメールをお送りください。<br>
-      <a class="feedback-mail" id="feedbackMailLink" href="mailto:koike.a@fsc.chubu.ac.jp">koike.a@fsc.chubu.ac.jp</a>
+      <a class="feedback-mail" id="feedbackMailLink" href="mailto:koike.a@fsc.chubu.ac.jp">koike.a@fsc.chubu.ac.jp</a><br>
+      <span class="feedback-name">中部大学　小池温子</span>
     </p>
     <button class="ghost small" id="summarySaveFile" type="button">テキストでも保存する</button>
   </div>

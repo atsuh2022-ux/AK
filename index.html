@@ -500,6 +500,11 @@
     font-weight: 800;
     font-size: 14.5px;
     color: var(--navy);
+    margin: 0 0 4px;
+  }
+  .prep-note {
+    font-size: 10.5px;
+    color: var(--muted);
     margin: 0 0 8px;
   }
   .prep-list {
@@ -621,6 +626,7 @@
       <div class="summary-list" id="summaryList"></div>
       <div class="prep-section">
         <p class="prep-title">事前に用意するものリスト</p>
+        <p class="prep-note">※食事は宿泊地等で摂取することを想定しているため、事前用意リストには反映されません</p>
         <ul class="prep-list" id="prepList"></ul>
       </div>
     </div>
@@ -714,6 +720,9 @@
 
   // Per-event overrides for the "あなたのプラン" field.
   var PLAN_FIELD_OPTS = {
+    breakfast: {
+      placeholder: 'どんな内容にするか書いてみましょう'
+    },
     snack1: {
       placeholder: '例：バナナ、ゼリー飲料',
       hint: '食べるものを単語で書いてください（区切りは「、」）'

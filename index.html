@@ -341,13 +341,99 @@
   }
   .copy-box p { margin: 0 0 8px; font-size: 12.5px; color: var(--ink-soft); }
 
+  button.small { padding: 8px 14px; font-size: 12.5px; }
+
+  .summary-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .summary-overlay[hidden] { display: none; }
+  .summary-back {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 12px 16px 4px;
+    cursor: pointer;
+  }
+  .summary-viewport {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: hidden;
+    padding: 4px 16px;
+  }
+  .summary-fit {
+    width: 100%;
+    max-width: 640px;
+    transform-origin: top center;
+  }
+  .summary-title {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 800;
+    font-size: 19px;
+    color: var(--navy);
+    margin: 0 0 2px;
+  }
+  .summary-meta {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  .summary-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .summary-row {
+    display: grid;
+    grid-template-columns: 58px 108px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+    padding-block: 5px;
+    border-bottom: 1px solid var(--line);
+  }
+  .summary-time { font-size: 11.5px; font-weight: 700; color: var(--orange); }
+  .summary-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .summary-answer {
+    font-size: 12.5px;
+    color: var(--ink);
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .summary-answer.empty { color: var(--muted); font-style: italic; }
+  .summary-footer {
+    padding: 8px 16px 14px;
+    text-align: center;
+    flex: 0 0 auto;
+  }
+  .summary-hint { font-size: 11px; color: var(--muted); margin: 0 0 8px; }
+
   @media (prefers-reduced-motion: reduce) {
     .progress-fill { transition: none; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="mainWrap">
   <header class="top">
     <h1>当日の摂取計画ワークシート</h1>
     <p class="subtitle">試合時間に合わせて、自分の当日プランを埋めていきましょう</p>
@@ -382,9 +468,24 @@
 
   <footer class="bar">
     <button class="ghost" id="resetBtn" type="button">リセット</button>
-    <button class="primary" id="saveBtn" type="button">保存する</button>
+    <button class="primary" id="saveBtn" type="button">入力完了・まとめを見る</button>
   </footer>
   <p class="status" id="saveStatus">&nbsp;</p>
+</div>
+
+<div class="summary-overlay" id="summaryOverlay" hidden>
+  <button class="summary-back" id="summaryBack" type="button">← 編集に戻る</button>
+  <div class="summary-viewport" id="summaryViewport">
+    <div class="summary-fit" id="summaryFit">
+      <p class="summary-title">当日の摂取計画　まとめ</p>
+      <p class="summary-meta" id="summaryMeta"></p>
+      <div class="summary-list" id="summaryList"></div>
+    </div>
+  </div>
+  <div class="summary-footer">
+    <p class="summary-hint">この画面をスクリーンショットして送ってください</p>
+    <button class="ghost small" id="summarySaveFile" type="button">テキストでも保存する</button>
+  </div>
 </div>
 
 <script>
@@ -604,8 +705,7 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  saveBtn.addEventListener('click', function () {
-    saveLocal();
+  function saveToFile() {
     var text = buildSummaryText();
     var namePart = state.name ? state.name + 'の' : '';
     var filename = sanitizeFilename('当日の摂取計画_' + namePart + '記入') + '.txt';
@@ -650,7 +750,77 @@
         copyStatus.textContent = '保存できない場合は、上の欄を選択してコピーしてください';
       }
     })();
+  }
+
+  // ---- Single-screen summary (for a one-tap screenshot) ----
+  var summaryOverlay = document.getElementById('summaryOverlay');
+  var summaryViewport = document.getElementById('summaryViewport');
+  var summaryFit = document.getElementById('summaryFit');
+  var summaryList = document.getElementById('summaryList');
+  var summaryMeta = document.getElementById('summaryMeta');
+
+  function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function buildSummaryScreen() {
+    summaryList.innerHTML = '';
+    EVENTS.forEach(function (ev) {
+      var plan = (state.answers[ev.id] || '').trim();
+      var row = document.createElement('div');
+      row.className = 'summary-row';
+      row.innerHTML =
+        '<span class="summary-time mono">' + escapeHtml(ev.time) + '</span>' +
+        '<span class="summary-name">' + escapeHtml(ev.name) + '</span>' +
+        '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
+      summaryList.appendChild(row);
+    });
+    var metaParts = [];
+    if (state.name) metaParts.push('氏名：' + state.name);
+    if (state.event) metaParts.push('種目：' + state.event);
+    if (state.time) metaParts.push('試合時刻：' + state.time);
+    summaryMeta.textContent = metaParts.join('　');
+  }
+
+  function fitSummary() {
+    summaryFit.style.transform = 'scale(1)';
+    var natural = summaryFit.scrollHeight;
+    var available = summaryViewport.clientHeight;
+    var scale = 1;
+    if (available > 0 && natural > available) {
+      scale = Math.max(0.55, available / natural);
+    }
+    summaryFit.style.transform = 'scale(' + scale + ')';
+  }
+
+  function showSummary() {
+    buildSummaryScreen();
+    document.getElementById('mainWrap').hidden = true;
+    summaryOverlay.hidden = false;
+    requestAnimationFrame(function () {
+      fitSummary();
+      setTimeout(fitSummary, 250); // re-check once web fonts finish swapping in
+    });
+  }
+
+  function hideSummary() {
+    summaryOverlay.hidden = true;
+    document.getElementById('mainWrap').hidden = false;
+  }
+
+  window.addEventListener('resize', function () {
+    if (!summaryOverlay.hidden) fitSummary();
   });
+
+  saveBtn.addEventListener('click', function () {
+    saveLocal();
+    showSummary();
+  });
+
+  document.getElementById('summaryBack').addEventListener('click', hideSummary);
+  document.getElementById('summarySaveFile').addEventListener('click', saveToFile);
 
   function start(initialData) {
     var restored = loadLocal();

@@ -583,7 +583,7 @@
       <div class="field full">
         <label for="fTime">試合時刻</label>
         <input id="fTime" type="text" placeholder="例：11:00" autocomplete="off">
-        <p class="field-hint">入力すると、下の朝食・補食・試合直前の時刻が自動で計算されます</p>
+        <p class="field-hint">入力すると、下の朝食・補食・試合直前・試合直後の時刻が自動で計算されます</p>
       </div>
     </div>
   </section>
@@ -649,8 +649,7 @@
       ['n', 'ゼリー飲料＋少量の水分で最終エネルギー補給']
     ]},
     { id: 'aftergame', time: '', name: '試合直後（30分以内）', ex: [
-      ['n', 'オレンジジュース＋カステラ、鮭おにぎりなど（糖質＋たんぱく質）を補給'],
-      ['h', '冷たい飲料で体の内部から冷やす']
+      ['n', 'オレンジジュース＋カステラ、鮭おにぎりなど（糖質＋たんぱく質）を補給']
     ]}
   ];
 
@@ -884,8 +883,9 @@
     if (last) last.focus();
   }
 
-  // Minutes to subtract from match time for each auto-calculated event.
-  var TIME_OFFSETS_MIN = { breakfast: 240, snack1: 90, presnack: 30 };
+  // Minutes relative to match time for each auto-calculated event
+  // (negative = before kickoff, positive = after).
+  var TIME_OFFSETS_MIN = { breakfast: -240, snack1: -90, presnack: -30, aftergame: 30 };
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -909,7 +909,7 @@
     var base = parseTimeToMinutes(state.time);
     if (base === null) return;
     Object.keys(TIME_OFFSETS_MIN).forEach(function (id) {
-      var derived = minutesToTimeStr(base - TIME_OFFSETS_MIN[id]);
+      var derived = minutesToTimeStr(base + TIME_OFFSETS_MIN[id]);
       state.times[id] = derived;
       var input = document.getElementById('time-' + id);
       if (input) input.value = derived;

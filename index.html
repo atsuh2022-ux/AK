@@ -160,6 +160,7 @@
     box-sizing: border-box;
   }
   .field input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .field-hint { font-size: 10.5px; color: var(--muted); margin: 4px 0 0; }
 
   @media (max-width: 380px) {
     .fields { grid-template-columns: 1fr; }
@@ -527,7 +528,11 @@
     <div class="fields">
       <div class="field"><label for="fName">氏名</label><input id="fName" type="text" autocomplete="off"></div>
       <div class="field"><label for="fEvent">試合種目</label><input id="fEvent" type="text" autocomplete="off"></div>
-      <div class="field full"><label for="fTime">試合時刻</label><input id="fTime" type="text" placeholder="例：11:00" autocomplete="off"></div>
+      <div class="field full">
+        <label for="fTime">試合時刻</label>
+        <input id="fTime" type="text" placeholder="例：11:00" autocomplete="off">
+        <p class="field-hint">入力すると、下の朝食・補食・試合直前の時刻が自動で計算されます</p>
+      </div>
     </div>
   </section>
 
@@ -722,6 +727,38 @@
     });
   }
 
+  // Minutes to subtract from match time for each auto-calculated event.
+  var TIME_OFFSETS_MIN = { breakfast: 240, snack1: 90, presnack: 30 };
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  function parseTimeToMinutes(v) {
+    v = (v || '').trim();
+    var m = /^(\d{1,2})[:：](\d{1,2})$/.exec(v);
+    if (!m) m = /^(\d{1,2})時(\d{1,2})?分?$/.exec(v);
+    if (!m) return null;
+    var h = parseInt(m[1], 10);
+    var mnt = m[2] ? parseInt(m[2], 10) : 0;
+    if (isNaN(h) || isNaN(mnt) || h < 0 || h > 23 || mnt < 0 || mnt > 59) return null;
+    return h * 60 + mnt;
+  }
+
+  function minutesToTimeStr(total) {
+    var t = ((total % 1440) + 1440) % 1440;
+    return Math.floor(t / 60) + ':' + pad2(t % 60);
+  }
+
+  function recalcEventTimesFromMatchTime() {
+    var base = parseTimeToMinutes(state.time);
+    if (base === null) return;
+    Object.keys(TIME_OFFSETS_MIN).forEach(function (id) {
+      var derived = minutesToTimeStr(base - TIME_OFFSETS_MIN[id]);
+      state.times[id] = derived;
+      var input = document.getElementById('time-' + id);
+      if (input) input.value = derived;
+    });
+  }
+
   function bindFields() {
     var fName = document.getElementById('fName');
     var fEvent = document.getElementById('fEvent');
@@ -731,7 +768,11 @@
     fTime.value = state.time || '';
     fName.addEventListener('input', function () { state.name = fName.value; scheduleSave(); });
     fEvent.addEventListener('input', function () { state.event = fEvent.value; scheduleSave(); });
-    fTime.addEventListener('input', function () { state.time = fTime.value; scheduleSave(); });
+    fTime.addEventListener('input', function () {
+      state.time = fTime.value;
+      recalcEventTimesFromMatchTime();
+      scheduleSave();
+    });
   }
 
   function buildSummaryText() {

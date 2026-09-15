@@ -218,14 +218,21 @@
     flex-wrap: wrap;
     margin-bottom: 8px;
   }
-  .event-time {
+  .time-input {
+    font: inherit;
     font-size: 13px;
     font-weight: 700;
     color: var(--navy);
     background: var(--surface-rail);
-    padding: 2px 8px;
+    border: 1.5px solid transparent;
+    padding: 4px 6px;
     border-radius: 6px;
+    width: 5.8em;
+    min-width: 0;
+    text-align: center;
   }
+  .time-input::placeholder { color: var(--muted); font-weight: 700; opacity: 0.7; }
+  .time-input:focus-visible { outline: none; border-color: var(--focus); background: var(--input-bg); }
   .event-name {
     font-size: 15.5px;
     font-weight: 900;
@@ -403,7 +410,16 @@
     padding-block: 5px;
     border-bottom: 1px solid var(--line);
   }
-  .summary-time { font-size: 11.5px; font-weight: 700; color: var(--orange); }
+  .summary-time {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--orange);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .summary-time.empty { color: var(--muted); font-style: italic; font-weight: 400; }
   .summary-name {
     font-size: 12px;
     font-weight: 700;
@@ -439,7 +455,7 @@
     <p class="subtitle">試合時間に合わせて、自分の当日プランを埋めていきましょう</p>
     <div class="progress-row">
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-label" id="progressLabel">0 / 12 記入</div>
+      <div class="progress-label" id="progressLabel">0 / 6 記入</div>
     </div>
   </header>
 
@@ -503,42 +519,20 @@
       ['h', 'こまめな水分補給を心がける'],
       ['h', 'アイスベストなど暑熱対策グッズを準備する']
     ]},
-    { id: 'snack1', time: '9:30', name: '補食（試合1.5時間前）', ex: [
+    { id: 'snack1', time: '9:00', name: '補食（試合1〜2時間前）', ex: [
       ['n', 'バナナ・ゼリー・スポーツドリンクなど、消化の良い糖質源をとる']
     ]},
-    { id: 'presnack', time: '10:45', name: '試合直前（15分前）', ex: [
+    { id: 'presnack', time: '10:30', name: '試合直前（〜30分前）', ex: [
       ['n', 'ゼリー飲料＋少量の水分で最終エネルギー補給']
-    ]},
-    { id: 'game', time: '11:00', name: '試合中', ex: [
-      ['n', '給水タイムでこまめに水分・電解質を補給する'],
-      ['h', 'アイスタオル・氷嚢などで体を冷やす']
     ]},
     { id: 'aftergame', time: '〜11:30', name: '試合直後（30分以内）', ex: [
       ['n', 'オレンジジュース＋カステラ、鮭おにぎりなど（糖質＋たんぱく質）を補給'],
       ['h', '冷たい飲料で体の内部から冷やす']
-    ]},
-    { id: 'recovery', time: '数時間以内', name: '回復食', ex: [
-      ['n', '定食スタイル（6つのお皿）でしっかり回復する'],
-      ['b', '水分・電解質の補給も継続する']
-    ]},
-    { id: 'practice', time: '午後', name: '練習・クールダウン', ex: [
-      ['n', '軽い補食で栄養を補う（ある場合）'],
-      ['h', '体調・水分のチェックを行う']
-    ]},
-    { id: 'arrive', time: '夕方', name: '宿舎到着', ex: [
-      ['b', '体重を測定し、減少分の1.5倍の水分・電解質を補給する']
-    ]},
-    { id: 'dinner', time: '18:00', name: '夕食', ex: [
-      ['n', '定食スタイル（6つのお皿）で1日を締めくくる']
-    ]},
-    { id: 'sleep', time: '就寝前', name: '就寝前', ex: [
-      ['n', '水分補給を行う'],
-      ['b', '翌日に向けてコンディションを整え、睡眠時間を確保する']
     ]}
   ];
 
   var STORAGE_KEY = 'apw-worksheet-v1';
-  var state = { name: '', event: '', time: '', answers: {} };
+  var state = { name: '', event: '', time: '', answers: {}, times: {} };
 
   function loadLocal() {
     try {
@@ -601,7 +595,26 @@
 
       var head = document.createElement('div');
       head.className = 'event-head';
-      head.innerHTML = '<span class="event-time mono">' + ev.time + '</span><span class="event-name">' + ev.name + '</span>';
+
+      var timeInput = document.createElement('input');
+      timeInput.type = 'text';
+      timeInput.className = 'time-input mono';
+      timeInput.id = 'time-' + ev.id;
+      timeInput.placeholder = ev.time;
+      timeInput.autocomplete = 'off';
+      timeInput.inputMode = 'numeric';
+      timeInput.value = state.times[ev.id] || '';
+      timeInput.addEventListener('input', function () {
+        state.times[ev.id] = timeInput.value;
+        scheduleSave();
+      });
+      head.appendChild(timeInput);
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'event-name';
+      nameSpan.textContent = ev.name;
+      head.appendChild(nameSpan);
+
       body.appendChild(head);
 
       var ul = document.createElement('ul');
@@ -664,7 +677,8 @@
     lines.push('試合時刻：' + (state.time || '（未記入）'));
     lines.push('');
     EVENTS.forEach(function (ev) {
-      lines.push('[' + ev.time + '] ' + ev.name);
+      var time = (state.times[ev.id] || '').trim();
+      lines.push('[' + (time || '時刻未記入') + '] ' + ev.name);
       var plan = (state.answers[ev.id] || '').trim();
       lines.push('自分のプラン：' + (plan || '（未記入）'));
       lines.push('');
@@ -679,7 +693,7 @@
   var resetBtn = document.getElementById('resetBtn');
   resetBtn.addEventListener('click', function () {
     if (!confirm('入力した内容をすべて消去します。よろしいですか？')) return;
-    state = { name: '', event: '', time: '', answers: {} };
+    state = { name: '', event: '', time: '', answers: {}, times: {} };
     saveLocal();
     render();
     bindFields();
@@ -769,10 +783,11 @@
     summaryList.innerHTML = '';
     EVENTS.forEach(function (ev) {
       var plan = (state.answers[ev.id] || '').trim();
+      var time = (state.times[ev.id] || '').trim();
       var row = document.createElement('div');
       row.className = 'summary-row';
       row.innerHTML =
-        '<span class="summary-time mono">' + escapeHtml(ev.time) + '</span>' +
+        '<span class="summary-time mono' + (time ? '' : ' empty') + '">' + (time ? escapeHtml(time) : '未記入') + '</span>' +
         '<span class="summary-name">' + escapeHtml(ev.name) + '</span>' +
         '<span class="summary-answer' + (plan ? '' : ' empty') + '">' + (plan ? escapeHtml(plan) : '未記入') + '</span>';
       summaryList.appendChild(row);
@@ -829,6 +844,7 @@
       state.event = restored.event || '';
       state.time = restored.time || '';
       state.answers = restored.answers || {};
+      state.times = restored.times || {};
     }
     render();
     bindFields();

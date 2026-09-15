@@ -629,6 +629,17 @@
     flex: 0 0 auto;
   }
   .summary-hint { font-size: 11px; color: var(--muted); margin: 0 0 8px; }
+  .feedback-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin: 0 0 10px;
+    line-height: 1.6;
+  }
+  .feedback-mail {
+    color: var(--navy);
+    font-weight: 700;
+    text-decoration: underline;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .progress-fill { transition: none; }
@@ -706,6 +717,10 @@
   </div>
   <div class="summary-footer">
     <p class="summary-hint">この画面をスクリーンショットして送ってください</p>
+    <p class="feedback-note">
+      フィードバックが欲しい方は、下記へスクリーンショットをお送りください<br>
+      <a class="feedback-mail" id="feedbackMailLink" href="mailto:koike.a@fsc.chubu.ac.jp">koike.a@fsc.chubu.ac.jp</a>
+    </p>
     <button class="ghost small" id="summarySaveFile" type="button">テキストでも保存する</button>
   </div>
 </div>
@@ -1402,6 +1417,11 @@
 
   document.getElementById('summaryBack').addEventListener('click', hideSummary);
   document.getElementById('summarySaveFile').addEventListener('click', saveToFile);
+
+  var feedbackMailLink = document.getElementById('feedbackMailLink');
+  if (feedbackMailLink) {
+    feedbackMailLink.href = 'mailto:koike.a@fsc.chubu.ac.jp?subject=' + encodeURIComponent('栄養ワークシートのフィードバック希望');
+  }
 
   function start(initialData) {
     var restored = loadLocal();

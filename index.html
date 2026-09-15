@@ -436,6 +436,43 @@
     overflow-wrap: break-word;
   }
   .summary-answer.empty { color: var(--muted); font-style: italic; }
+
+  .prep-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 2px solid var(--line);
+  }
+  .prep-title {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 800;
+    font-size: 14.5px;
+    color: var(--navy);
+    margin: 0 0 8px;
+  }
+  .prep-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+  .prep-list li {
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--surface-rail);
+    border-radius: 999px;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+  .prep-list li.prep-empty {
+    background: transparent;
+    color: var(--muted);
+    font-style: italic;
+    padding: 0;
+    white-space: normal;
+  }
+
   .summary-footer {
     padding: 8px 16px 14px;
     text-align: center;
@@ -496,6 +533,10 @@
       <p class="summary-title">当日の摂取計画　まとめ</p>
       <p class="summary-meta" id="summaryMeta"></p>
       <div class="summary-list" id="summaryList"></div>
+      <div class="prep-section">
+        <p class="prep-title">事前に用意するものリスト</p>
+        <ul class="prep-list" id="prepList"></ul>
+      </div>
     </div>
   </div>
   <div class="summary-footer">
@@ -683,6 +724,13 @@
       lines.push('自分のプラン：' + (plan || '（未記入）'));
       lines.push('');
     });
+    lines.push('事前に用意するものリスト（朝食以外の記入内容より自動作成）');
+    var prepItems = buildPrepList();
+    if (prepItems.length === 0) {
+      lines.push('（記入なし）');
+    } else {
+      prepItems.forEach(function (item) { lines.push('・' + item); });
+    }
     return lines.join('\n');
   }
 
@@ -797,6 +845,50 @@
     if (state.event) metaParts.push('種目：' + state.event);
     if (state.time) metaParts.push('試合時刻：' + state.time);
     summaryMeta.textContent = metaParts.join('　');
+
+    renderPrepList();
+  }
+
+  // Everything except breakfast is assumed to need advance preparation
+  // (packing, buying, pre-mixing) rather than being cooked on the spot.
+  var PREP_EXCLUDE_IDS = ['breakfast'];
+  var PREP_SPLIT_RE = /[、，,・\/／\+＋\s]+/;
+
+  function buildPrepList() {
+    var seen = {};
+    var items = [];
+    EVENTS.forEach(function (ev) {
+      if (PREP_EXCLUDE_IDS.indexOf(ev.id) !== -1) return;
+      var text = (state.answers[ev.id] || '').trim();
+      if (!text) return;
+      text.split(PREP_SPLIT_RE).forEach(function (part) {
+        var trimmed = part.trim();
+        if (!trimmed) return;
+        var key = trimmed.toLowerCase();
+        if (seen[key]) return;
+        seen[key] = true;
+        items.push(trimmed);
+      });
+    });
+    return items;
+  }
+
+  function renderPrepList() {
+    var el = document.getElementById('prepList');
+    el.innerHTML = '';
+    var items = buildPrepList();
+    if (items.length === 0) {
+      var li = document.createElement('li');
+      li.className = 'prep-empty';
+      li.textContent = '朝食以外の欄に記入すると、ここに自動でリストアップされます';
+      el.appendChild(li);
+      return;
+    }
+    items.forEach(function (item) {
+      var li = document.createElement('li');
+      li.textContent = item;
+      el.appendChild(li);
+    });
   }
 
   function fitSummary() {

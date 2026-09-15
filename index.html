@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E3A5F">
+<title>当日の摂取計画ワークシート</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root {
+    --bg: #F4F7FA;
+    --surface: #FFFFFF;
+    --surface-rail: #EAF1F6;
+    --navy: #1E3A5F;
+    --navy-deep: #16293F;
+    --orange: #FF6B35;
+    --ink: #1F2937;
+    --ink-soft: #55606E;
+    --muted: #8792A0;
+    --line: #DCE4EC;
+    --input-bg: #FBFCFD;
+    --input-border: #C9D4DF;
+    --cat-n: #C0392B;
+    --cat-h: #2266CC;
+    --cat-b: #7B3FA0;
+    --chip-fg: #FFFFFF;
+    --focus: #FF6B35;
+    --shadow: 0 1px 2px rgba(30,58,95,0.06), 0 6px 16px rgba(30,58,95,0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10161F;
+      --surface: #1A2431;
+      --surface-rail: #223047;
+      --navy: #7FA6D6;
+      --navy-deep: #0C121A;
+      --orange: #FF8B5E;
+      --ink: #E7ECF2;
+      --ink-soft: #AEB9C6;
+      --muted: #7C8899;
+      --line: #2E3B4D;
+      --input-bg: #131B25;
+      --input-border: #34435A;
+      --cat-n: #E67365;
+      --cat-h: #6FA0F0;
+      --cat-b: #B285D9;
+      --chip-fg: #0C121A;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    padding-inline: 16px;
+    padding-block: 14px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  header.top {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: var(--bg);
+    padding-block: 6px 10px;
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: 0.08em;
+    margin: 0 0 4px;
+  }
+  h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 1.3;
+    color: var(--navy);
+    margin: 0 0 2px;
+    text-wrap: balance;
+  }
+  .subtitle {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 7px;
+    border-radius: 99px;
+    background: var(--surface-rail);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--orange), #FF9466);
+    border-radius: 99px;
+    transition: width 0.35s ease;
+  }
+  .progress-label {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .intro {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .intro p { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+
+  .fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .field input {
+    font: inherit;
+    font-size: 14px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--ink);
+  }
+  .field input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+  .swatch { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+  .timeline { display: flex; flex-direction: column; }
+  .event {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 10px;
+    position: relative;
+  }
+  .rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .rail .line {
+    width: 2px;
+    flex: 1;
+    background: var(--line);
+  }
+  .rail .node {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--orange);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1.5px var(--orange);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .event:first-child .rail .line.top { visibility: hidden; }
+  .event:last-child .rail .line.bottom { visibility: hidden; }
+  .rail .line.top { height: 14px; flex: 0 0 auto; }
+  .rail .line.bottom { flex: 1 1 auto; min-height: 10px; }
+
+  .event-body { padding-bottom: 20px; }
+  .event-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .event-time {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    background: var(--surface-rail);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .event-name {
+    font-size: 15.5px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+
+  .examples {
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .examples li {
+    font-size: 12.5px;
+    line-height: 1.55;
+    padding-left: 14px;
+    position: relative;
+  }
+  .examples li::before {
+    content: '・';
+    position: absolute;
+    left: 0;
+  }
+  .examples li.n { color: var(--cat-n); }
+  .examples li.h { color: var(--cat-h); }
+  .examples li.b { color: var(--cat-b); }
+
+  textarea.plan {
+    width: 100%;
+    font: inherit;
+    font-size: 14.5px;
+    color: var(--ink);
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    border-radius: 10px;
+    padding: 10px 11px;
+    resize: none;
+    line-height: 1.5;
+    min-height: 44px;
+    field-sizing: content;
+  }
+  textarea.plan::placeholder { color: var(--muted); }
+  textarea.plan:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+  textarea.plan.filled { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 6%, var(--input-bg)); }
+
+  .plan-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 0 0 4px;
+    letter-spacing: 0.03em;
+  }
+
+  footer.bar {
+    position: sticky;
+    bottom: env(safe-area-inset-bottom, 0px);
+    margin-inline: -16px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid var(--line);
+  }
+  button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 10px;
+    border: none;
+    padding: 11px 16px;
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--navy);
+    color: #FFFFFF;
+    flex: 1;
+  }
+  button.primary:active { opacity: 0.85; }
+  button.ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--input-border);
+  }
+  .status {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 6px;
+    min-height: 14px;
+  }
+
+  .copy-box {
+    display: none;
+    margin-top: 10px;
+    padding: 12px;
+  }
+  .copy-box.show { display: block; }
+  .copy-box textarea {
+    width: 100%;
+    height: 140px;
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    padding: 8px;
+    background: var(--input-bg);
+    color: var(--ink);
+  }
+  .copy-box p { margin: 0 0 8px; font-size: 12.5px; color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">日本パラ陸上 強化合宿｜栄養サポート講義</p>
+    <h1>当日の摂取計画ワークシート</h1>
+    <p class="subtitle">試合時間に合わせて、自分の当日プランを埋めていきましょう</p>
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">0 / 12 記入</div>
+    </div>
+  </header>
+
+  <section class="card intro">
+    <p>真ん中の「記入例」を参考にしながら、それぞれの欄に当日の食事・水分補給プランを書き込んでください。入力内容はこの端末に自動で保存されます。</p>
+    <div class="fields">
+      <div class="field"><label for="fName">氏名</label><input id="fName" type="text" autocomplete="off"></div>
+      <div class="field"><label for="fEvent">試合種目</label><input id="fEvent" type="text" autocomplete="off"></div>
+      <div class="field full"><label for="fTime">試合時刻</label><input id="fTime" type="text" placeholder="例：11:00" autocomplete="off"></div>
+    </div>
+  </section>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--cat-n)"></i>栄養補給のポイント</span>
+    <span><i class="swatch" style="background:var(--cat-h)"></i>暑熱対策のポイント</span>
+    <span><i class="swatch" style="background:var(--cat-b)"></i>両方のポイント</span>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <div class="card copy-box" id="copyBox">
+    <p>お使いの環境では自動保存ができないため、下の内容を長押し・全選択してコピーしてください。</p>
+    <textarea id="copyText" readonly></textarea>
+    <div class="status" id="copyStatus"></div>
+  </div>
+
+  <footer class="bar">
+    <button class="ghost" id="resetBtn" type="button">リセット</button>
+    <button class="primary" id="saveBtn" type="button">保存する</button>
+  </footer>
+  <p class="status" id="saveStatus">&nbsp;</p>
+</div>
+
+<script>
+(function () {
+  var EVENTS = [
+    { id: 'wake', time: '6:30', name: '起床', ex: [
+      ['b', '体重測定・コンディション記録を行う'],
+      ['n', '目覚めの水分補給をとる']
+    ]},
+    { id: 'breakfast', time: '7:00', name: '朝食（試合4時間前）', ex: [
+      ['n', 'ごはん・みそ汁・卵料理・果物など、普段通りの食事をとる'],
+      ['n', '主食を中心に。脂質・食物繊維の多いものは控えめに']
+    ]},
+    { id: 'move', time: '8:00', name: '会場への移動', ex: [
+      ['h', 'こまめな水分補給を心がける'],
+      ['h', 'アイスベストなど暑熱対策グッズを準備する']
+    ]},
+    { id: 'snack1', time: '9:30', name: '補食（試合1.5時間前）', ex: [
+      ['n', 'バナナ・ゼリー・スポーツドリンクなど、消化の良い糖質源をとる']
+    ]},
+    { id: 'presnack', time: '10:45', name: '試合直前（15分前）', ex: [
+      ['n', 'ゼリー飲料＋少量の水分で最終エネルギー補給']
+    ]},
+    { id: 'game', time: '11:00', name: '試合中', ex: [
+      ['n', '給水タイムでこまめに水分・電解質を補給する'],
+      ['h', 'アイスタオル・氷嚢などで体を冷やす']
+    ]},
+    { id: 'aftergame', time: '〜11:30', name: '試合直後（30分以内）', ex: [
+      ['n', 'オレンジジュース＋カステラ、鮭おにぎりなど（糖質＋たんぱく質）を補給'],
+      ['h', '冷たい飲料で体の内部から冷やす']
+    ]},
+    { id: 'recovery', time: '数時間以内', name: '回復食', ex: [
+      ['n', '定食スタイル（6つのお皿）でしっかり回復する'],
+      ['b', '水分・電解質の補給も継続する']
+    ]},
+    { id: 'practice', time: '午後', name: '練習・クールダウン', ex: [
+      ['n', '軽い補食で栄養を補う（ある場合）'],
+      ['h', '体調・水分のチェックを行う']
+    ]},
+    { id: 'arrive', time: '夕方', name: '宿舎到着', ex: [
+      ['b', '体重を測定し、減少分の1.5倍の水分・電解質を補給する']
+    ]},
+    { id: 'dinner', time: '18:00', name: '夕食', ex: [
+      ['n', '定食スタイル（6つのお皿）で1日を締めくくる']
+    ]},
+    { id: 'sleep', time: '就寝前', name: '就寝前', ex: [
+      ['n', '水分補給を行う'],
+      ['b', '翌日に向けてコンディションを整え、睡眠時間を確保する']
+    ]}
+  ];
+
+  var STORAGE_KEY = 'apw-worksheet-v1';
+  var state = { name: '', event: '', time: '', answers: {} };
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function saveLocal() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var timelineEl = document.getElementById('timeline');
+  var progressFill = document.getElementById('progressFill');
+  var progressLabel = document.getElementById('progressLabel');
+  var saveStatus = document.getElementById('saveStatus');
+
+  function updateProgress() {
+    var filled = 0;
+    EVENTS.forEach(function (ev) {
+      if ((state.answers[ev.id] || '').trim().length > 0) filled++;
+    });
+    var pct = Math.round((filled / EVENTS.length) * 100);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = filled + ' / ' + EVENTS.length + ' 記入';
+  }
+
+  var saveTimer = null;
+  function scheduleSave(msg) {
+    saveStatus.textContent = msg || '入力中…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      saveLocal();
+      saveStatus.textContent = '自動保存しました（この端末に保存）';
+    }, 400);
+  }
+
+  function autoGrow(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight) + 'px';
+  }
+
+  function render() {
+    timelineEl.innerHTML = '';
+    EVENTS.forEach(function (ev) {
+      var row = document.createElement('div');
+      row.className = 'event';
+
+      var rail = document.createElement('div');
+      rail.className = 'rail';
+      rail.innerHTML = '<div class="line top"></div><div class="node"></div><div class="line bottom"></div>';
+      row.appendChild(rail);
+
+      var body = document.createElement('div');
+      body.className = 'event-body';
+
+      var head = document.createElement('div');
+      head.className = 'event-head';
+      head.innerHTML = '<span class="event-time mono">' + ev.time + '</span><span class="event-name">' + ev.name + '</span>';
+      body.appendChild(head);
+
+      var ul = document.createElement('ul');
+      ul.className = 'examples';
+      ev.ex.forEach(function (pair) {
+        var li = document.createElement('li');
+        li.className = pair[0];
+        li.textContent = pair[1];
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+
+      var label = document.createElement('p');
+      label.className = 'plan-label';
+      label.textContent = 'あなたのプラン';
+      body.appendChild(label);
+
+      var ta = document.createElement('textarea');
+      ta.className = 'plan';
+      ta.id = 'plan-' + ev.id;
+      ta.placeholder = '自分の予定を書いてみましょう';
+      ta.rows = 1;
+      ta.value = state.answers[ev.id] || '';
+      if (ta.value.trim()) ta.classList.add('filled');
+      ta.addEventListener('input', function () {
+        state.answers[ev.id] = ta.value;
+        ta.classList.toggle('filled', ta.value.trim().length > 0);
+        autoGrow(ta);
+        updateProgress();
+        scheduleSave();
+      });
+      body.appendChild(ta);
+
+      row.appendChild(body);
+      timelineEl.appendChild(row);
+
+      requestAnimationFrame(function () { autoGrow(ta); });
+    });
+  }
+
+  function bindFields() {
+    var fName = document.getElementById('fName');
+    var fEvent = document.getElementById('fEvent');
+    var fTime = document.getElementById('fTime');
+    fName.value = state.name || '';
+    fEvent.value = state.event || '';
+    fTime.value = state.time || '';
+    fName.addEventListener('input', function () { state.name = fName.value; scheduleSave(); });
+    fEvent.addEventListener('input', function () { state.event = fEvent.value; scheduleSave(); });
+    fTime.addEventListener('input', function () { state.time = fTime.value; scheduleSave(); });
+  }
+
+  function buildSummaryText() {
+    var lines = [];
+    lines.push('当日の摂取計画ワークシート');
+    lines.push('日本パラ陸上 強化合宿｜栄養サポート講義');
+    lines.push('');
+    lines.push('氏名：' + (state.name || '（未記入）'));
+    lines.push('試合種目：' + (state.event || '（未記入）'));
+    lines.push('試合時刻：' + (state.time || '（未記入）'));
+    lines.push('');
+    EVENTS.forEach(function (ev) {
+      lines.push('[' + ev.time + '] ' + ev.name);
+      var plan = (state.answers[ev.id] || '').trim();
+      lines.push('自分のプラン：' + (plan || '（未記入）'));
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+
+  function sanitizeFilename(base) {
+    return base.replace(/[\\/:*?"<>|]/g, '').trim();
+  }
+
+  var resetBtn = document.getElementById('resetBtn');
+  resetBtn.addEventListener('click', function () {
+    if (!confirm('入力した内容をすべて消去します。よろしいですか？')) return;
+    state = { name: '', event: '', time: '', answers: {} };
+    saveLocal();
+    render();
+    bindFields();
+    updateProgress();
+    saveStatus.textContent = 'リセットしました';
+    document.getElementById('copyBox').classList.remove('show');
+  });
+
+  var saveBtn = document.getElementById('saveBtn');
+  var copyBox = document.getElementById('copyBox');
+  var copyText = document.getElementById('copyText');
+  var copyStatus = document.getElementById('copyStatus');
+
+  function downloadTextFile(filename, text) {
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  saveBtn.addEventListener('click', function () {
+    saveLocal();
+    var text = buildSummaryText();
+    var namePart = state.name ? state.name + 'の' : '';
+    var filename = sanitizeFilename('当日の摂取計画_' + namePart + '記入') + '.txt';
+
+    (async function () {
+      var downloads = null;
+      try {
+        downloads = (typeof window.claude !== 'undefined' && window.claude.use) ? await window.claude.use('downloads') : null;
+      } catch (e) { downloads = null; }
+
+      if (downloads) {
+        try {
+          await downloads.save({ filename: filename, data: text });
+          saveStatus.textContent = '保存しました：' + filename;
+          copyBox.classList.remove('show');
+          return;
+        } catch (err) {
+          if (err && err.code === 'declined') {
+            saveStatus.textContent = '保存をキャンセルしました';
+            return;
+          }
+          // fall through
+        }
+      }
+
+      // Plain browser: trigger a real file download.
+      try {
+        downloadTextFile(filename, text);
+        saveStatus.textContent = 'ファイルをダウンロードしました：' + filename;
+      } catch (e) {
+        saveStatus.textContent = '';
+      }
+
+      // Always also offer copy, in case the download didn't reach the user (e.g. in-app browsers).
+      copyText.value = text;
+      copyBox.classList.add('show');
+      copyStatus.textContent = '';
+      try {
+        await navigator.clipboard.writeText(text);
+        copyStatus.textContent = 'クリップボードにもコピーしました';
+      } catch (e) {
+        copyStatus.textContent = '保存できない場合は、上の欄を選択してコピーしてください';
+      }
+    })();
+  });
+
+  function start(initialData) {
+    var restored = loadLocal();
+    if (restored) {
+      state.name = restored.name || '';
+      state.event = restored.event || '';
+      state.time = restored.time || '';
+      state.answers = restored.answers || {};
+    }
+    render();
+    bindFields();
+    updateProgress();
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>

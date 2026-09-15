@@ -476,6 +476,8 @@
     flex-direction: column;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-x: hidden;
+    max-width: 100vw;
   }
   .summary-overlay[hidden] { display: none; }
   .summary-back {
@@ -588,10 +590,10 @@
     background: var(--surface-rail);
     border-radius: 999px;
     padding: 4px 6px 4px 12px;
-    white-space: nowrap;
     min-width: 0;
+    max-width: 100%;
   }
-  .prep-name { min-width: 0; }
+  .prep-name { min-width: 0; overflow-wrap: anywhere; }
   .prep-qty {
     font: inherit;
     font-size: 11.5px;

@@ -819,8 +819,7 @@
       lines.push('（記入なし）');
     } else {
       prepItems.forEach(function (item) {
-        var qty = (state.prepQty[item] || '').toString().trim();
-        lines.push('・' + item + (qty ? '　×' + qty + '個' : ''));
+        lines.push('・' + item.name + '　×' + prepQtyFor(item) + '個');
       });
     }
     return lines.join('\n');
@@ -946,9 +945,11 @@
   var PREP_EXCLUDE_IDS = ['breakfast'];
   var PREP_SPLIT_RE = /[、，,・\/／\+＋\s]+/;
 
+  // Returns [{ name, count }] -- count is how many times that word appeared
+  // across all included answers, used as the default quantity.
   function buildPrepList() {
-    var seen = {};
-    var items = [];
+    var byKey = {};
+    var order = [];
     EVENTS.forEach(function (ev) {
       if (PREP_EXCLUDE_IDS.indexOf(ev.id) !== -1) return;
       var text = (state.answers[ev.id] || '').trim();
@@ -957,12 +958,20 @@
         var trimmed = part.trim();
         if (!trimmed) return;
         var key = trimmed.toLowerCase();
-        if (seen[key]) return;
-        seen[key] = true;
-        items.push(trimmed);
+        if (!byKey[key]) {
+          byKey[key] = { name: trimmed, count: 0 };
+          order.push(key);
+        }
+        byKey[key].count += 1;
       });
     });
-    return items;
+    return order.map(function (key) { return byKey[key]; });
+  }
+
+  // A user-typed quantity always wins; otherwise fall back to the auto count.
+  function prepQtyFor(item) {
+    var manual = state.prepQty[item.name];
+    return (manual !== undefined && manual !== '') ? manual : String(item.count);
   }
 
   function renderPrepList() {
@@ -982,7 +991,7 @@
 
       var name = document.createElement('span');
       name.className = 'prep-name';
-      name.textContent = item;
+      name.textContent = item.name;
       li.appendChild(name);
 
       var qty = document.createElement('input');
@@ -990,11 +999,10 @@
       qty.className = 'prep-qty';
       qty.min = '0';
       qty.inputMode = 'numeric';
-      qty.placeholder = '-';
-      qty.setAttribute('aria-label', item + 'の個数');
-      qty.value = state.prepQty[item] || '';
+      qty.setAttribute('aria-label', item.name + 'の個数');
+      qty.value = prepQtyFor(item);
       qty.addEventListener('input', function () {
-        state.prepQty[item] = qty.value;
+        state.prepQty[item.name] = qty.value;
         scheduleSave();
       });
       li.appendChild(qty);

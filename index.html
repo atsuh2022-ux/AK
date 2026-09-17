@@ -1309,6 +1309,7 @@
   function buildOrderedRows() {
     var rows = [];
     EVENTS.forEach(function (ev, idx) {
+      if (PROGRESS_EXCLUDE_IDS.indexOf(ev.id) !== -1) return;
       var time = (state.times[ev.id] || '').trim();
       rows.push({
         time: time,

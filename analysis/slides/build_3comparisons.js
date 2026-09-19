@@ -46,6 +46,38 @@ function titleBlock(slide, kicker, title, dark) {
   });
 }
 
+// ================= 血糖ベースラインシフトの注記 =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "NEW FINDING", "新知見：血糖ベースラインの持続的シフト", false);
+  s.addText("14日間の連続CGMデータで、DAY5（8/29）14:50頃から血糖が持続的に上昇し、以後一度も元の水準に戻っていないことが判明しました。夜間平均血糖：DAY1〜4は93〜107 mg/dL→DAY6以降は130〜177 mg/dL。低血糖（70mg/dL未満）は14日間通じて一度も検出されていません。", {
+    x: MARGIN, y: 1.7, w: W - MARGIN * 2, h: 1.1, fontFace: "Calibri", fontSize: 13, color: INK, isTextBox: true, margin: 0
+  });
+
+  const rows = [
+    [{ text: "比較", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "シフトとの関係", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "信頼度", options: { bold: true, color: WHITE, fill: { color: NAVY } } }],
+    ["① スムージー vs 固形", "スムージー(DAY4〜6)はDAY4・5がシフト前、DAY6のみシフト後。3日平均がDAY6の異常値に引っ張られている可能性", "⚠ 要注意"],
+    ["② スムージー vs おにぎり＋スムージー", "スムージー側はシフト前後が混在。おにぎり＋スムージー(DAY8〜10)は完全にシフト後", "⚠ 要注意"],
+    ["③ おにぎり＋スムージー vs 糖質減", "両条件(DAY8〜13)とも完全にシフト後で条件が揃っている", "✓ 信頼できる"],
+  ].map((r, i) => i === 0 ? r : r.map((c, j) => ({
+    text: c, options: { color: j === 0 ? NAVY : (j === 2 ? (c.startsWith("✓") ? "0F5C3D" : "6B4B00") : INK), bold: j === 0 || j === 2, fill: { color: i % 2 === 0 ? CARDBG : WHITE }, fontSize: 12 }
+  })));
+  s.addTable(rows, {
+    x: MARGIN, y: 3.0, w: W - MARGIN * 2, h: 2.4,
+    fontFace: "Calibri", fontSize: 12, border: { type: "solid", color: "E3E1DB", pt: 0.75 },
+    autoPage: false, valign: "middle", rowH: 0.6,
+    colW: [3.3, 6.53, 2.3]
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.7, w: W - MARGIN * 2, h: 1.15, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("✓ ③（糖質量の比較）は結論を維持できる。①・②は選手・スタッフへの確認（8/29 14:30〜15:30頃の状況）後に再評価が必要。", {
+    x: MARGIN + 0.3, y: 5.86, w: W - MARGIN * 2 - 0.6, h: 0.85, fontFace: "Calibri", fontSize: 12.5, bold: true, color: "0F5C3D", isTextBox: true, margin: 0
+  });
+}
+
 function legendChip(s, x, y, color, label) {
   s.addShape("rect", { x, y: y + 0.03, w: 0.16, h: 0.16, fill: { color }, line: { type: "none" } });
   s.addText(label, { x: x + 0.22, y: y - 0.04, w: 3.0, h: 0.3, fontFace: "Calibri", fontSize: 11.5, bold: true, color: INK, isTextBox: true, margin: 0 });
@@ -74,10 +106,17 @@ function sectionLabel(s, y, text, color) {
 }
 
 function comparisonSlide(opts) {
-  const { kicker, title, nameA, nameB, colorA, colorB, glucose, condition, nightly, nightlyNote, verdict } = opts;
+  const { kicker, title, nameA, nameB, colorA, colorB, glucose, condition, nightly, nightlyNote, verdict, reliability } = opts;
   const s = pres.addSlide();
   s.background = { color: WHITE };
   titleBlock(s, kicker, title, false);
+
+  if (reliability) {
+    const badgeColor = reliability.ok ? "0F5C3D" : "6B4B00";
+    const badgeBg = reliability.ok ? "EAF7F0" : "FDF3E2";
+    s.addShape("roundRect", { x: W - MARGIN - 4.6, y: 0.48, w: 4.6, h: 0.4, rectRadius: 0.08, fill: { color: badgeBg }, line: { color: badgeColor, width: 0.75 } });
+    s.addText(reliability.text, { x: W - MARGIN - 4.5, y: 0.48, w: 4.4, h: 0.4, align: "center", valign: "middle", fontFace: "Calibri", fontSize: 10.5, bold: true, color: badgeColor, isTextBox: true, margin: 0 });
+  }
 
   legendChip(s, MARGIN, 1.5, colorA, nameA);
   legendChip(s, MARGIN + 4.2, 1.5, colorB, nameB);
@@ -142,7 +181,8 @@ comparisonSlide({
     { label: "運動後疲労", a: "2.67", b: "3.33" },
   ],
   nightlyNote: "⚠ 練習時間がスムージー60分/日・固形140分/日と大きく異なり、夜間指標には練習量の交絡が強く残る。数値差を食事の効果と断定できない。",
-  verdict: "液状化だけでは血糖の乱高下（Δピーク・CV）が明確に悪化する。自覚的な消化器症状・満腹感には大差なく、夜間コンディションも練習量の交絡下では大きな差と言えない。「液状化の単独効果」は血糖面でむしろマイナス。"
+  verdict: "液状化だけでは血糖の乱高下（Δピーク・CV）が明確に悪化する。自覚的な消化器症状・満腹感には大差なく、夜間コンディションも練習量の交絡下では大きな差と言えない。「液状化の単独効果」は血糖面でむしろマイナス。",
+  reliability: { ok: false, text: "⚠ 血糖シフトの影響を受けている可能性" }
 });
 
 // ================= ② スムージー vs おにぎり＋スムージー =================
@@ -170,7 +210,8 @@ comparisonSlide({
     { label: "運動後疲労", a: "2.67", b: "3.17" },
   ],
   nightlyNote: "練習時間はスムージー60分/日・おにぎり+スムージー80分/日とやや近く、①よりは比較しやすい。起床時コンディション・睡眠の質は同水準。",
-  verdict: "おにぎりを同時摂取すると、同水準の血糖燃料供給を保ったままΔピーク・CVが小さくなり、波形がなだらかになる。満腹感は上がるが消化器症状は軽微。夜間コンディションもわずかに良好な傾向で、単独液状化よりバランスが良い。"
+  verdict: "おにぎりを同時摂取すると、同水準の血糖燃料供給を保ったままΔピーク・CVが小さくなり、波形がなだらかになる。満腹感は上がるが消化器症状は軽微。夜間コンディションもわずかに良好な傾向で、単独液状化よりバランスが良い。",
+  reliability: { ok: false, text: "⚠ 血糖シフトの影響を受けている可能性" }
 });
 
 // ================= ③ おにぎり＋スムージー vs おにぎり＋糖質減 =================
@@ -198,7 +239,8 @@ comparisonSlide({
     { label: "運動後疲労", a: "3.17", b: "3.33" },
   ],
   nightlyNote: "⚠ 起床時コンディション・睡眠の質は糖質減が最高だが、持久力・爆発力は糖質減が最低。血糖の燃料供給は良好なのに体感が逆という矛盾があり、練習内容の交絡を含め要検証。",
-  verdict: "糖質を減らすとiAUCが約39%減少し血糖の負荷は明確に軽い。練習中の燃料供給も犠牲になっていない。消化器症状も軽微。一方で持久力・爆発力の自己評価は最も低く、血糖データと体感の食い違いが残る最大の論点。"
+  verdict: "糖質を減らすとiAUCが約39%減少し血糖の負荷は明確に軽い。練習中の燃料供給も犠牲になっていない。消化器症状も軽微。一方で持久力・爆発力の自己評価は最も低く、血糖データと体感の食い違いが残る最大の論点。",
+  reliability: { ok: true, text: "✓ 両条件ともシフト後で信頼できる" }
 });
 
 pres.writeFile({ fileName: "output_3comparisons.pptx" }).then(() => console.log("done"));

@@ -423,6 +423,7 @@ barPanelsSlide("EXPERIMENT 1 – RESULTS", "主要指標の比較",
     s.addText(p.d, { x: MARGIN + 0.65, y: y + 0.3, w: 11.3, h: 0.65, fontFace: "Calibri", fontSize: 12, color: MUTED, isTextBox: true, margin: 0 });
     y += 1.28;
   });
+  addFooter(s, "⚠ 総合考察で後述する血糖ベースラインシフトの影響を受けている可能性があり、①②の数値は参考値として扱う。", false);
 }
 
 // ================= 実験2 Section divider =================
@@ -533,6 +534,7 @@ barPanelsSlide("EXPERIMENT 2 – RESULTS", "主要指標の比較",
     s.addText(p.d, { x: MARGIN + 0.65, y: y + 0.3, w: 11.3, h: 0.65, fontFace: "Calibri", fontSize: 12, color: MUTED, isTextBox: true, margin: 0 });
     y += 1.28;
   });
+  addFooter(s, "✓ 実験2は両条件とも血糖ベースラインシフト後で条件が揃っており、この考察（①②③）は信頼できる（総合考察で後述）。", false);
 }
 
 // ================= 総合考察 Section divider =================
@@ -622,6 +624,50 @@ sectionDivider("GENERAL DISCUSSION", "総合考察", "実験1・実験2を横断
   });
 }
 
+// ================= 横断③: 新知見（血糖ベースラインシフト） =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "NEW FINDING", "新知見：血糖ベースラインの持続的シフト", false);
+  s.addText("その後入手した14日間の連続CGMデータ（FreeStyleリブレ実測）により、実験1・実験2全体の解釈に関わる事実が判明した。", {
+    x: MARGIN, y: 1.6, w: W - MARGIN * 2, h: 0.4, fontFace: "Calibri", fontSize: 12, color: MUTED, isTextBox: true, margin: 0
+  });
+
+  const dayLabels = ["準備", "DAY1", "DAY2", "DAY3", "DAY4", "DAY5", "DAY6", "DAY7", "DAY8", "DAY9", "DAY10", "DAY11", "DAY12", "DAY13", "DAY14"];
+  const dayMeanAll = [141.2, 126.7, 117.6, 119.0, 126.0, 160.7, 208.9, 210.8, 196.0, 189.1, 191.0, 204.5, 187.3, 174.2, 184.2];
+  s.addChart("line", [{ name: "終日平均血糖", labels: dayLabels, values: dayMeanAll }], {
+    x: MARGIN, y: 2.0, w: W - MARGIN * 2, h: 2.35,
+    chartColors: [C_SMOOTHIE],
+    lineSize: 2.25, lineDataSymbol: "circle", lineDataSymbolSize: 4,
+    showTitle: false, showLegend: false,
+    catAxisLabelColor: MUTED, catAxisLabelFontSize: 9,
+    valAxisLabelColor: MUTED, valAxisLabelFontSize: 9,
+    valAxisTitle: "終日平均血糖(mg/dL)", showValAxisTitle: true, valAxisTitleFontSize: 9, valAxisTitleColor: MUTED,
+    valGridLine: { color: "E3E1DB", size: 0.75 }, catGridLine: { style: "none" },
+    catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB"
+  });
+
+  const rows = [
+    [{ text: "対応する分析", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "シフトとの関係・信頼度", options: { bold: true, color: WHITE, fill: { color: NAVY } } }],
+    ["実験1（固形 vs スムージー）", "⚠ スムージー(DAY4〜6)はDAY4・5がシフト前、DAY6のみシフト後。結論は参考値として扱う"],
+    ["実験2（おにぎり+スムージー vs 糖質減）", "✓ 両条件(DAY8〜13)とも完全にシフト後で条件が揃っており、結論を維持できる"],
+  ].map((r, i) => i === 0 ? r : r.map((c, j) => ({
+    text: c, options: { color: j === 0 ? NAVY : (c.startsWith("✓") ? "0F5C3D" : "6B4B00"), bold: j === 0, fill: { color: i % 2 === 0 ? CARDBG : WHITE }, fontSize: 12 }
+  })));
+  s.addTable(rows, {
+    x: MARGIN, y: 4.55, w: W - MARGIN * 2, h: 1.3,
+    fontFace: "Calibri", fontSize: 12, border: { type: "solid", color: "E3E1DB", pt: 0.75 },
+    autoPage: false, valign: "middle", rowH: 0.55,
+    colW: [4.8, 7.93]
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 6.05, w: W - MARGIN * 2, h: 1.05, rectRadius: 0.1, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("DAY5(8/29)14:50頃、血糖が150→270台へ急上昇し以後戻らず（夜間平均93〜107→130〜177mg/dL）。原因不明だが低血糖は14日間通じて一度も検出されず。選手・スタッフへの聞き取りが最優先の次の一手。", {
+    x: MARGIN + 0.25, y: 6.18, w: W - MARGIN * 2 - 0.5, h: 0.8, fontFace: "Calibri", fontSize: 11, bold: true, color: "6B4B00", isTextBox: true, margin: 0
+  });
+}
+
 // ================= 総合考察まとめ =================
 {
   const s = pres.addSlide();
@@ -671,8 +717,8 @@ sectionDivider("GENERAL DISCUSSION", "総合考察", "実験1・実験2を横断
   titleBlock(s, "CONCLUSION", "結論", true);
 
   const concl = [
-    "実験1：副食のみの液状化は血糖の乱高下をむしろ悪化させるが、消化器症状には差がない",
-    "実験2：おにぎりと副食を同時摂取する「部分的液状化」は血糖の乱高下を抑制し、糖質量の最適化でさらに改善する",
+    "実験1：副食のみの液状化は血糖の乱高下をむしろ悪化させるが、消化器症状には差がない（⚠血糖ベースラインシフトの影響下にあり参考値）",
+    "実験2：おにぎりと副食を同時摂取する「部分的液状化」は血糖の乱高下を抑制し、糖質量の最適化でさらに改善する（✓シフト後で条件が揃い信頼できる）",
     "アスリート視点では、固形は「安定」ではなく「練習中の燃料不足」と解釈すべきで、おにぎり＋スムージー（同時摂取）が乱高下抑制と燃料供給を両立する最もバランスの良い候補",
   ];
   let y = 1.9;
@@ -682,7 +728,7 @@ sectionDivider("GENERAL DISCUSSION", "総合考察", "実験1・実験2を横断
     s.addText(c, { x: MARGIN + 0.65, y: y - 0.02, w: 11.3, h: 0.85, fontFace: "Calibri", fontSize: 14, color: "E8EDF7", isTextBox: true, margin: 0, valign: "middle" });
     y += 1.15;
   });
-  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx", true);
+  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx／14日間_for_AI.xlsx", true);
 }
 
 // ================= 今後の課題 =================
@@ -692,7 +738,7 @@ sectionDivider("GENERAL DISCUSSION", "総合考察", "実験1・実験2を横断
   titleBlock(s, "FUTURE WORK", "今後の課題", false);
 
   const next = [
-    { t: "ベースライン血糖の統制", d: "8:00時点のベースライン血糖が条件間で60〜70 mg/dL異なる。前日の運動量・睡眠・センサー校正等の統制を推奨。" },
+    { t: "【最優先】血糖ベースラインシフトの原因究明", d: "14日間CGMで判明したDAY5(8/29)14:50頃からの持続的シフトの原因を、選手・スタッフへの聞き取り（補食・体調・ストレスの有無）で確認する。コスト0で最大の手がかりが得られる。" },
     { t: "練習量の統制", d: "練習時間が条件ブロックごとに大きく異なる（60〜180分）。練習内容・時間を条件間で揃えて再検証すると、食事の純粋な効果を評価しやすくなる。" },
     { t: "糖質減条件の矛盾の解消", d: "血糖の燃料供給は良好なのに持久力・爆発力の体感が低いという矛盾を解消するため、乳酸値やパワーメーターなど血糖以外の直接的なパフォーマンス指標の取得を検討したい。" },
     { t: "サンプルサイズの拡大", d: "各条件n=3日・単一被験者のため、複数選手・複数週にわたる追試により結果の頑健性を高める必要がある。" },

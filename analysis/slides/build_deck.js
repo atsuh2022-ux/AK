@@ -223,6 +223,68 @@ function titleBlock(slide, kicker, title, dark) {
   addFooter(s, "色付きブロック＝朝の被験食摂取（8:00）。固形・スムージー条件はおにぎりを約2.5時間後に別途摂取。灰色帯＝全条件共通のトレーニング時間帯。", false);
 }
 
+// ================= Slide: 14-day CGM baseline shift =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "NEW FINDING", "新知見：血糖ベースラインの持続的シフト", false);
+  s.addText("14日間の連続CGMデータ（FreeStyleリブレ実測）を分析したところ、DAY5午後に血糖が急上昇し、以後一度も元の水準に戻っていないことが判明した。", {
+    x: MARGIN, y: 1.6, w: W - MARGIN * 2, h: 0.45, fontFace: "Calibri", fontSize: 12, color: MUTED, isTextBox: true, margin: 0
+  });
+
+  const dayLabels = ["準備", "DAY1", "DAY2", "DAY3", "DAY4", "DAY5", "DAY6", "DAY7", "DAY8", "DAY9", "DAY10", "DAY11", "DAY12", "DAY13", "DAY14"];
+  const dayMeanAll = [141.2, 126.7, 117.6, 119.0, 126.0, 160.7, 208.9, 210.8, 196.0, 189.1, 191.0, 204.5, 187.3, 174.2, 184.2];
+
+  s.addChart("line", [{ name: "終日平均血糖", labels: dayLabels, values: dayMeanAll }], {
+    x: MARGIN, y: 2.1, w: W - MARGIN * 2, h: 3.4,
+    chartColors: [C_SMOOTHIE],
+    lineSize: 2.5, lineDataSymbol: "circle", lineDataSymbolSize: 5,
+    showTitle: false, showLegend: false,
+    catAxisLabelColor: MUTED, catAxisLabelFontSize: 9.5,
+    valAxisLabelColor: MUTED, valAxisLabelFontSize: 9.5,
+    valAxisTitle: "終日平均血糖 (mg/dL)", showValAxisTitle: true, valAxisTitleFontSize: 10, valAxisTitleColor: MUTED,
+    valGridLine: { color: "E3E1DB", size: 0.75 }, catGridLine: { style: "none" },
+    catAxisLineColor: "E3E1DB", valAxisLineColor: "E3E1DB"
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.65, w: W - MARGIN * 2, h: 1.15, rectRadius: 0.1, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("⚠ DAY5(8/29)14:50頃〜：夜間平均血糖が93〜107→130〜177 mg/dLへ持続的に上昇（原因不明）", { x: MARGIN + 0.25, y: 5.75, w: W - MARGIN * 2 - 0.5, h: 0.9, fontFace: "Calibri", fontSize: 11.5, bold: true, color: "6B4B00", isTextBox: true, margin: 0 });
+
+  addFooter(s, "14日間を通じ低血糖(70mg/dL未満)は一度も検出されず。詳細は次スライド。", false);
+}
+
+// ================= Slide: CGM shift impact on comparisons =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "NEW FINDING", "この4条件比較への影響：比較ごとに信頼度が異なる", false);
+
+  const rows = [
+    [{ text: "比較", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "シフトとの関係", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "信頼度", options: { bold: true, color: WHITE, fill: { color: NAVY } } }],
+    ["① 固形 vs スムージー", "スムージー(DAY4〜6)はDAY4・5がシフト前、DAY6のみシフト後。3日平均がDAY6の異常値に引っ張られている可能性", "⚠ 要注意"],
+    ["② スムージー vs おにぎり＋スムージー", "スムージー側はシフト前後が混在。おにぎり＋スムージー(DAY8〜10)は完全にシフト後", "⚠ 要注意"],
+    ["③ おにぎり＋スムージー vs 糖質減", "両条件(DAY8〜13)とも完全にシフト後で条件が揃っている", "✓ 信頼できる"],
+  ].map((r, i) => i === 0 ? r : r.map((c, j) => ({
+    text: c, options: { color: j === 0 ? NAVY : (j === 2 ? (c.startsWith("✓") ? "0F5C3D" : "6B4B00") : INK), bold: j === 0 || j === 2, fill: { color: i % 2 === 0 ? CARDBG : WHITE }, fontSize: 12 }
+  })));
+
+  s.addTable(rows, {
+    x: MARGIN, y: 1.8, w: W - MARGIN * 2, h: 2.4,
+    fontFace: "Calibri", fontSize: 12, border: { type: "solid", color: "E3E1DB", pt: 0.75 },
+    autoPage: false, valign: "middle", rowH: 0.6,
+    colW: [3.3, 6.53, 2.3]
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 4.5, w: W - MARGIN * 2, h: 2.35, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("✓ ③（糖質量の比較）は結論を維持できる", { x: MARGIN + 0.3, y: 4.66, w: W - MARGIN * 2 - 0.6, h: 0.32, fontFace: "Calibri", fontSize: 13, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+  s.addText(
+    "iAUC 39%減という最も重要な結果はシフトの影響を受けていない。一方①・②で見られた「固形の方が安定」「スムージー単独は乱高下が大きい」という結果は、一部がタイミング（シフト前後の混在）による見かけ上のものである可能性があり、割り引いて解釈する必要がある。選手・スタッフに8/29 14:30〜15:30頃の状況（補食・体調・ストレス）を確認することを推奨する。",
+    { x: MARGIN + 0.3, y: 5.0, w: W - MARGIN * 2 - 0.6, h: 1.75, fontFace: "Calibri", fontSize: 12, color: "0F5C3D", isTextBox: true, margin: 0 }
+  );
+}
+
 // ================= Slide 4: Glucose curve =================
 {
   const s = pres.addSlide();
@@ -297,10 +359,17 @@ function titleBlock(slide, kicker, title, dark) {
 }
 
 // ================= Slide 6: Comparison 1 =================
-function comparisonSlide(kicker, title, leftLabel, leftColor, leftStats, rightLabel, rightColor, rightStats, insight) {
+function comparisonSlide(kicker, title, leftLabel, leftColor, leftStats, rightLabel, rightColor, rightStats, insight, reliability) {
   const s = pres.addSlide();
   s.background = { color: WHITE };
   titleBlock(s, kicker, title, false);
+
+  if (reliability) {
+    const badgeColor = reliability.ok ? "0F5C3D" : "6B4B00";
+    const badgeBg = reliability.ok ? "EAF7F0" : "FDF3E2";
+    s.addShape("roundRect", { x: W - MARGIN - 4.2, y: 0.48, w: 4.2, h: 0.4, rectRadius: 0.08, fill: { color: badgeBg }, line: { color: badgeColor, width: 0.75 } });
+    s.addText(reliability.text, { x: W - MARGIN - 4.1, y: 0.48, w: 4.0, h: 0.4, align: "center", valign: "middle", fontFace: "Calibri", fontSize: 10.5, bold: true, color: badgeColor, isTextBox: true, margin: 0 });
+  }
 
   const colW = (W - MARGIN * 2 - 0.4) / 2;
   function card(x, label, color, stats) {
@@ -328,21 +397,24 @@ comparisonSlide(
   "COMPARISON 1", "スムージー vs 固形（副食のみ・純粋比較）",
   "固形摂取", C_SOLID, [["53.7 mg/dL", "Δピーク血糖値"], ["11.2%", "変動係数 CV"]],
   "スムージー摂取", C_SMOOTHIE, [["85.0 mg/dL", "Δピーク血糖値（1.6倍）"], ["14.7%", "変動係数 CV"]],
-  "副食を液状化するだけで血糖の上昇幅・乱高下は明確に増大。液状化は消化の負担感を下げる一方、血糖の安定には必ずしも寄与しない可能性がある。選手の「出力向上」の体感は、血糖の安定ではなく消化器系の負担軽減（内臓への血流集中の緩和）による可能性が高い。"
+  "副食を液状化するだけで血糖の上昇幅・乱高下は明確に増大。液状化は消化の負担感を下げる一方、血糖の安定には必ずしも寄与しない可能性がある。選手の「出力向上」の体感は、血糖の安定ではなく消化器系の負担軽減（内臓への血流集中の緩和）による可能性が高い。",
+  { ok: false, text: "⚠ 血糖シフトの影響を受けている可能性" }
 );
 
 comparisonSlide(
   "COMPARISON 2", "スムージー vs おにぎり＋スムージー",
   "スムージー摂取", C_SMOOTHIE, [["85.0 mg/dL", "Δピーク血糖値"], ["14.7%", "変動係数 CV"]],
   "おにぎり＋スムージー", C_ONIGISMO, [["78.0 mg/dL", "Δピーク血糖値"], ["10.1%", "変動係数 CV（最小）"]],
-  "おにぎりを同時摂取した方がΔピーク・CVともに小さい。おにぎり（固形デンプン）が副食の急激な糖吸収を緩衝し、波形がなだらかになっている可能性がある。総摂取糖質量は増えるが（iAUC絶対値は上昇）、研究背景の「総固形物量の調整による血糖・消化ストレス緩和」仮説を支持する結果。"
+  "おにぎりを同時摂取した方がΔピーク・CVともに小さい。おにぎり（固形デンプン）が副食の急激な糖吸収を緩衝し、波形がなだらかになっている可能性がある。総摂取糖質量は増えるが（iAUC絶対値は上昇）、研究背景の「総固形物量の調整による血糖・消化ストレス緩和」仮説を支持する結果。",
+  { ok: false, text: "⚠ 血糖シフトの影響を受けている可能性" }
 );
 
 comparisonSlide(
   "COMPARISON 3", "おにぎり＋スムージー vs おにぎり＋糖質減",
   "おにぎり＋スムージー", C_ONIGISMO, [["5,230", "iAUC 2h (mg/dL・分)"], ["242.3 mg/dL", "ピーク血糖値"]],
   "おにぎり＋糖質減", C_LOWSUGAR, [["3,168 (▼39%)", "iAUC 2h (mg/dL・分)"], ["250.3 mg/dL", "ピーク血糖値（同水準）"]],
-  "研究目的に最も近い比較。糖質を減らすことで食後2時間の正味の血糖上昇（iAUC）が約39%減少。ピーク自体の高さはほぼ同水準だが、上昇の「持続・面積」＝体への負荷は明確に小さい。おにぎりの満足感を保ちながら総糖質量を最適化する方針はデータ上も支持される。"
+  "研究目的に最も近い比較。糖質を減らすことで食後2時間の正味の血糖上昇（iAUC）が約39%減少。ピーク自体の高さはほぼ同水準だが、上昇の「持続・面積」＝体への負荷は明確に小さい。おにぎりの満足感を保ちながら総糖質量を最適化する方針はデータ上も支持される。",
+  { ok: true, text: "✓ 両条件ともシフト後で信頼できる" }
 );
 
 // ================= Slide: Timing effect (same-energy comparison) =================
@@ -603,7 +675,7 @@ comparisonSlide(
   s.addShape("roundRect", { x: MARGIN, y: 4.55, w: W - MARGIN * 2, h: 2.2, rectRadius: 0.1, fill: { color: "1A2350" }, line: { type: "none" } });
   s.addText("次のステップ", { x: MARGIN + 0.35, y: 4.75, w: 6, h: 0.35, fontFace: "Calibri", fontSize: 14, bold: true, color: "8FB7E0", isTextBox: true, margin: 0 });
   const next = [
-    "8:00ベースライン血糖の条件間差（60〜70 mg/dL）の要因確認（前日運動量・睡眠・センサー校正）",
+    "【最優先】DAY5(8/29)14:50頃〜の血糖ベースラインシフトの原因確認。選手・スタッフへの聞き取りが最も費用対効果が高い一手。①②の結論はこれを踏まえ再評価する（③は影響を受けず結論を維持できる）",
     "練習時間が条件ブロックごとに大きく異なる（60〜180分）ため、今後は練習内容・時間を揃えて再検証すると食事の純粋な効果を評価しやすくなる",
     "満腹感・食欲の条件差は「おにぎり同時摂取による食事量の違い」であり、形態そのものの効果ではない点に留意",
   ];
@@ -613,7 +685,7 @@ comparisonSlide(
     ny += 0.48;
   });
 
-  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx", true);
+  addFooter(s, "データ出典：for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx／14日間_for_AI.xlsx", true);
 }
 
 pres.writeFile({ fileName: "output.pptx" }).then(() => console.log("done"));

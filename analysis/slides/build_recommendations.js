@@ -38,10 +38,16 @@ function questionTag(slide, qnum, qtext) {
   slide.addText(`Q${qnum}`, { x: MARGIN + 0.15, y: 1.42, w: 0.6, h: 0.42, align: "center", valign: "middle", fontFace: "Cambria", fontSize: 14, bold: true, color: TEAL, isTextBox: true, margin: 0 });
   slide.addText(qtext, { x: MARGIN + 0.8, y: 1.42, w: W - MARGIN * 2 - 1.0, h: 0.42, valign: "middle", fontFace: "Calibri", fontSize: 13, color: NAVY, isTextBox: true, margin: 0 });
 }
-function verdictBox(slide, y, h, answer, color) {
+function verdictBox(slide, y, h, answer, color, badge) {
   slide.addShape("roundRect", { x: MARGIN, y, w: W - MARGIN * 2, h, rectRadius: 0.12, fill: { color: "EAF7F0" }, line: { color, width: 1.25 } });
   slide.addText("✓ 答え", { x: MARGIN + 0.3, y: y + 0.12, w: 2, h: 0.3, fontFace: "Calibri", fontSize: 12, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
   slide.addText(answer, { x: MARGIN + 0.3, y: y + 0.42, w: W - MARGIN * 2 - 0.6, h: h - 0.55, fontFace: "Cambria", fontSize: 20, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+  if (badge) {
+    const bc = badge.ok ? "0F5C3D" : "6B4B00";
+    const bbg = badge.ok ? WHITE : "FDF3E2";
+    slide.addShape("roundRect", { x: W - MARGIN - 4.3, y: y + 0.12, w: 4.3, h: 0.34, rectRadius: 0.07, fill: { color: bbg }, line: { color: bc, width: 0.75 } });
+    slide.addText(badge.text, { x: W - MARGIN - 4.2, y: y + 0.12, w: 4.1, h: 0.34, align: "center", valign: "middle", fontFace: "Calibri", fontSize: 9.5, bold: true, color: bc, isTextBox: true, margin: 0 });
+  }
 }
 
 // ================= 1: Title =================
@@ -70,6 +76,37 @@ function verdictBox(slide, y, h, answer, color) {
   });
   s.addText("対象：高位脊髄損傷（SCI）車いす陸上選手 1名（反復測定、各条件n=3日）", {
     x: MARGIN, y: 6.85, w: 10, h: 0.35, fontFace: "Calibri", fontSize: 10.5, italic: true, color: "9AA6C4", isTextBox: true
+  });
+}
+
+// ================= 新知見：血糖ベースラインシフト =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "先にお読みください", "新知見：血糖ベースラインの持続的シフト", false);
+  s.addText("14日間の連続CGMデータで、DAY5（8/29）14:50頃から血糖が持続的に上昇し、以後一度も元の水準に戻っていないことが判明しました。夜間平均血糖：DAY1〜4は93〜107 mg/dL→DAY6以降は130〜177 mg/dL。低血糖（70mg/dL未満）は14日間通じて一度も検出されていません。", {
+    x: MARGIN, y: 1.7, w: W - MARGIN * 2, h: 1.1, fontFace: "Calibri", fontSize: 13, color: INK, isTextBox: true, margin: 0
+  });
+
+  const rows = [
+    [{ text: "この提案への影響", options: { bold: true, color: WHITE, fill: { color: NAVY } } },
+     { text: "", options: { bold: true, color: WHITE, fill: { color: NAVY } } }],
+    ["Q1（固形 vs スムージー）", "⚠ スムージーはDAY4・5(シフト前)とDAY6(シフト後)が混在。結論は参考値として扱う"],
+    ["Q2（食べるタイミング）", "⚠ 同様にスムージー側がシフト前後混在。結論は参考値として扱う"],
+    ["Q3（糖質量）", "✓ 両条件ともシフト後で条件が揃っており、結論は維持できる"],
+  ].map((r, i) => i === 0 ? r : r.map((c, j) => ({
+    text: c, options: { color: j === 0 ? NAVY : (c.startsWith("✓") ? "0F5C3D" : "6B4B00"), bold: j === 0, fill: { color: i % 2 === 0 ? CARDBG : WHITE }, fontSize: 13 }
+  })));
+  s.addTable(rows, {
+    x: MARGIN, y: 3.0, w: W - MARGIN * 2, h: 2.0,
+    fontFace: "Calibri", fontSize: 13, border: { type: "solid", color: "E3E1DB", pt: 0.75 },
+    autoPage: false, valign: "middle", rowH: 0.5,
+    colW: [4.13, 8.6]
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.4, w: W - MARGIN * 2, h: 1.3, rectRadius: 0.1, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("原因はデータからは特定できません。選手・スタッフに8/29 14:30〜15:30頃の状況（補食・体調・ストレス）を確認することを推奨します。原因が判明すればQ1・Q2の結論を再評価できます。", {
+    x: MARGIN + 0.3, y: 5.55, w: W - MARGIN * 2 - 0.6, h: 1.0, fontFace: "Calibri", fontSize: 12, bold: true, color: "6B4B00", isTextBox: true, margin: 0
   });
 }
 
@@ -125,7 +162,7 @@ function verdictBox(slide, y, h, answer, color) {
   titleBlock(s, "Q1 – DISCUSSION", "固形 vs スムージー：考察と結論", false);
   questionTag(s, 1, "固形が良いのか、スムージーが良いのか？");
 
-  verdictBox(s, 2.05, 1.15, "スムージーの方が良い", C_SMOOTHIE);
+  verdictBox(s, 2.05, 1.15, "スムージーの方が良い", C_SMOOTHIE, { ok: false, text: "⚠ 血糖シフトの影響で参考値" });
 
   const points = [
     "練習中（11:00〜14:00）に使える血糖＝燃料がスムージーの方が圧倒的に多い（222 vs 135 mg/dL）",
@@ -191,7 +228,7 @@ function verdictBox(slide, y, h, answer, color) {
   titleBlock(s, "Q2 – DISCUSSION", "食べるタイミング：考察と結論", false);
   questionTag(s, 2, "スムージーとおにぎりを食べるタイミングはいつが良いのか？");
 
-  verdictBox(s, 2.05, 1.15, "8:00に「同時に」食べるのが良い", C_ONIGISMO);
+  verdictBox(s, 2.05, 1.15, "8:00に「同時に」食べるのが良い", C_ONIGISMO, { ok: false, text: "⚠ 血糖シフトの影響で参考値" });
 
   const points = [
     "同時摂取は、練習中の燃料供給をスムージー単独と同水準（220 vs 222 mg/dL）に保ったまま、血糖の乱高下（CV・Δピーク）を明確に小さくする",
@@ -268,7 +305,7 @@ function verdictBox(slide, y, h, answer, color) {
   titleBlock(s, "Q3 – DISCUSSION", "朝ごはんの糖質量：考察と結論", false);
   questionTag(s, 3, "朝ごはんの糖質（C）は少し減らした方が良いのか？");
 
-  verdictBox(s, 2.05, 1.15, "血糖面では有望だが、現時点では断定できない", C_LOWSUGAR);
+  verdictBox(s, 2.05, 1.15, "血糖面では有望だが、現時点では断定できない", C_LOWSUGAR, { ok: true, text: "✓ シフト後で条件が揃い信頼できる" });
 
   const points = [
     "糖質を減らすと食後2時間の血糖上昇（iAUC）が約39%減少し、波形もより滑らかになる（CV 8.5%）",
@@ -298,9 +335,9 @@ function verdictBox(slide, y, h, answer, color) {
   titleBlock(s, "CONCLUSION", "この選手への朝食提案（まとめ）", true);
 
   const answers = [
-    { q: "Q1  固形 or スムージー", a: "スムージー", color: C_SMOOTHIE, note: "練習中の燃料供給が多く、不調もない" },
-    { q: "Q2  食べるタイミング", a: "おにぎりと8:00に同時摂取", color: C_ONIGISMO, note: "血糖の乱高下を抑えつつ燃料は確保" },
-    { q: "Q3  糖質（C）を減らすか", a: "有望だが要検証", color: C_LOWSUGAR, note: "血糖面は良いが持久力の体感と矛盾" },
+    { q: "Q1  固形 or スムージー", a: "スムージー ⚠参考値", color: C_SMOOTHIE, note: "血糖シフトの影響あり。練習中の燃料供給は多い" },
+    { q: "Q2  食べるタイミング", a: "おにぎりと8:00に同時摂取 ⚠参考値", color: C_ONIGISMO, note: "血糖シフトの影響あり。乱高下を抑え燃料は確保" },
+    { q: "Q3  糖質（C）を減らすか", a: "有望だが要検証 ✓信頼できる", color: C_LOWSUGAR, note: "シフト後で条件が揃う。体感との矛盾のみ要検証" },
   ];
   let y = 1.75;
   answers.forEach(a => {

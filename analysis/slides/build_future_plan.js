@@ -57,6 +57,32 @@ function challengeItem(s, y, num, title, desc, color) {
   s.addText(desc, { x: MARGIN + 0.6, y: y + 0.29, w: 11.3, h: 0.5, fontFace: "Calibri", fontSize: 11, color: MUTED, isTextBox: true, margin: 0 });
 }
 
+// ================= 1.5: 新知見：血糖ベースラインシフト =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "NEW FINDING（前進）", "新知見：血糖ベースラインの持続的シフト", false);
+  s.addText("その後入手した14日間の連続CGMデータにより、「摂取直前(8:00)血糖値のばらつき」の謎に大きな手がかりが得られた。", {
+    x: MARGIN, y: 1.7, w: W - MARGIN * 2, h: 0.5, fontFace: "Calibri", fontSize: 13, color: MUTED, isTextBox: true, margin: 0
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 2.3, w: W - MARGIN * 2, h: 1.7, rectRadius: 0.12, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("⚠ DAY5(8/29)14:50頃から血糖が持続的に上昇し、以後一度も戻っていない", { x: MARGIN + 0.3, y: 2.46, w: W - MARGIN * 2 - 0.6, h: 0.32, fontFace: "Calibri", fontSize: 13.5, bold: true, color: "6B4B00", isTextBox: true, margin: 0 });
+  s.addText("夜間(0:00-6:00)平均血糖：DAY1〜4は93〜107 mg/dL→DAY6以降は130〜177 mg/dLへ持続的に上昇。原因は不明（食事ログ未記録。体調不良・ストレス・蓄積疲労等が候補）。DAY6朝のメモに「7時にドーピング検査があった」との記載あり。", {
+    x: MARGIN + 0.3, y: 2.82, w: W - MARGIN * 2 - 0.6, h: 1.1, fontFace: "Calibri", fontSize: 11.5, color: "6B4B00", isTextBox: true, margin: 0
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 4.2, w: W - MARGIN * 2, h: 0.95, rectRadius: 0.1, fill: { color: "EAF7F0" }, line: { type: "none" } });
+  s.addText("✓ 良い知らせ：14日間で低血糖（70mg/dL未満）は一度も検出されず", { x: MARGIN + 0.3, y: 4.4, w: W - MARGIN * 2 - 0.6, h: 0.55, fontFace: "Calibri", fontSize: 12.5, bold: true, color: "0F5C3D", isTextBox: true, margin: 0 });
+
+  s.addShape("roundRect", { x: MARGIN, y: 5.35, w: W - MARGIN * 2, h: 1.25, rectRadius: 0.1, fill: { color: CARDBG }, line: { type: "none" } });
+  s.addText("最優先の次の一手", { x: MARGIN + 0.3, y: 5.5, w: 5, h: 0.3, fontFace: "Calibri", fontSize: 12, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+  s.addText("選手・スタッフに8/29 14:30〜15:30頃の状況（補食・体調・ストレス）を確認する。プランA〜Eより先に実施でき、コスト0で最大の手がかりが得られる。", {
+    x: MARGIN + 0.3, y: 5.82, w: W - MARGIN * 2 - 0.6, h: 0.7, fontFace: "Calibri", fontSize: 11.5, color: INK, isTextBox: true, margin: 0
+  });
+  addFooter(s, "①固形vsスムージー・②タイミングの結論はこのシフトの影響を受けている可能性があり要再評価。③糖質量の比較はシフト後で条件が揃い結論を維持できる。", false);
+}
+
 // ================= 2: 新たな課題① =================
 {
   const s = pres.addSlide();
@@ -64,7 +90,7 @@ function challengeItem(s, y, num, title, desc, color) {
   titleBlock(s, "NEW QUESTIONS", "新たな課題①（Q1・Q2から）", false);
 
   const items = [
-    { t: "摂取直前（8:00）血糖値のばらつき", d: "条件間で60〜70 mg/dL異なる原因が未解明。前日の運動量・睡眠・センサー校正等の切り分けが必要。", c: C_SOLID },
+    { t: "摂取直前（8:00）血糖値のばらつき（新知見で前進）", d: "条件間で60〜70 mg/dL異なる原因が未解明だったが、DAY5午後の血糖ベースラインシフトが主因の可能性が高いと判明。根本原因（体調・ストレス等）の特定はなお必要。", c: C_SOLID },
     { t: "血圧を一度も直接測定していない", d: "「食後低血圧」という核心仮説を、頭痛の有無という間接指標だけで判断してきた。", c: C_SMOOTHIE },
     { t: "スムージーの一過性スパイクの意味", d: "45分でピーク→90分でベースライン付近に戻る挙動が、より短いリードタイムでの摂取でも同じ影響を持つかは未検証。", c: C_SMOOTHIE },
     { t: "タイミングの中間点・他レシピでの再現性", d: "「同時」と「2.5〜3時間ずらし」の2点しか比較しておらず、間の用量反応関係や別の食材構成での再現性が未確認。", c: C_ONIGISMO },
@@ -191,26 +217,27 @@ function planCard(s, x, y, w, h, tag, title, purpose, design, effect, color) {
   titleBlock(s, "PRIORITY", "優先順位のまとめ", true);
 
   const rows = [
-    ["1", "プランA：固定トレーニングメニュー法", "最優先。労力に対して得られる情報量が最大", DEEPBLUE],
+    ["0", "DAY5(8/29)14:30〜15:30頃の状況を選手・スタッフに確認", "コスト0・即実施可能。最大の手がかりが得られる", "EDA100"],
+    ["1", "プランA：固定トレーニングメニュー法", "労力に対して得られる情報量が最大", DEEPBLUE],
     ["2", "プランB：客観的パフォーマンステストの追加", "Aとセットで、Q3の矛盾にかなり近づける", TEAL],
     ["3", "血圧スポット測定＋心拍数の連続測定", "核心仮説（食後低血圧）に直接答えられる", C_ONIGISMO],
     ["4", "プランC：ランダム化クロスオーバー", "余力があれば。順序効果を排除し妥当性を高める", C_LOWSUGAR],
     ["5", "プランD：糖質量の段階的検証", "血糖とパフォーマンスの最適点を探る発展形", "8B6FB0"],
   ];
-  let y = 1.75;
+  let y = 1.65;
   rows.forEach(([num, title, note, color]) => {
-    s.addShape("oval", { x: MARGIN, y, w: 0.42, h: 0.42, fill: { color }, line: { type: "none" } });
-    s.addText(num, { x: MARGIN, y, w: 0.42, h: 0.42, align: "center", valign: "middle", fontFace: "Cambria", fontSize: 14, bold: true, color: WHITE, isTextBox: true, margin: 0 });
-    s.addText(title, { x: MARGIN + 0.65, y: y - 0.02, w: 6.6, h: 0.5, valign: "middle", fontFace: "Calibri", fontSize: 13.5, bold: true, color: WHITE, isTextBox: true, margin: 0 });
-    s.addText(note, { x: MARGIN + 7.4, y: y - 0.02, w: 4.9, h: 0.5, valign: "middle", fontFace: "Calibri", fontSize: 11.5, color: "CADCFC", isTextBox: true, margin: 0 });
-    y += 0.68;
+    s.addShape("oval", { x: MARGIN, y, w: 0.4, h: 0.4, fill: { color }, line: { type: "none" } });
+    s.addText(num, { x: MARGIN, y, w: 0.4, h: 0.4, align: "center", valign: "middle", fontFace: "Cambria", fontSize: 13.5, bold: true, color: num === "0" ? "6B4B00" : WHITE, isTextBox: true, margin: 0 });
+    s.addText(title, { x: MARGIN + 0.62, y: y - 0.02, w: 6.65, h: 0.46, valign: "middle", fontFace: "Calibri", fontSize: 13, bold: true, color: WHITE, isTextBox: true, margin: 0 });
+    s.addText(note, { x: MARGIN + 7.35, y: y - 0.02, w: 4.95, h: 0.46, valign: "middle", fontFace: "Calibri", fontSize: 11, color: "CADCFC", isTextBox: true, margin: 0 });
+    y += 0.6;
   });
 
-  s.addShape("roundRect", { x: MARGIN, y: 5.55, w: W - MARGIN * 2, h: 1.3, rectRadius: 0.1, fill: { color: "1A2350" }, line: { type: "none" } });
-  s.addText("まず①②（練習量・パフォーマンス測定の標準化）だけでも実施できれば、今回パイロットで残った最大の疑問「糖質減は本当に持久力を下げるのか」にかなり近づける。余力に応じて③以降を積み増す段階的なアプローチを推奨。", {
-    x: MARGIN + 0.3, y: 5.7, w: W - MARGIN * 2 - 0.6, h: 1.0, valign: "middle", fontFace: "Calibri", fontSize: 12.5, color: "E8EDF7", isTextBox: true, margin: 0
+  s.addShape("roundRect", { x: MARGIN, y: 5.25, w: W - MARGIN * 2, h: 1.3, rectRadius: 0.1, fill: { color: "1A2350" }, line: { type: "none" } });
+  s.addText("まず0（原因確認）を即実施し、次いで①②（練習量・パフォーマンス測定の標準化）を行えば、パイロットで残った最大の疑問「糖質減は本当に持久力を下げるのか」にかなり近づける。余力に応じて③以降を積み増す段階的なアプローチを推奨。", {
+    x: MARGIN + 0.3, y: 5.4, w: W - MARGIN * 2 - 0.6, h: 1.0, valign: "middle", fontFace: "Calibri", fontSize: 12, color: "E8EDF7", isTextBox: true, margin: 0
   });
-  addFooter(s, "データ出典：これまでのパイロット分析（for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx）", true);
+  addFooter(s, "データ出典：これまでのパイロット分析（for_AI_.xlsx／0824スケジュール.xlsx／condition_app_2026-08-25_2026-09-07.xlsx／14日間_for_AI.xlsx）", true);
 }
 
 pres.writeFile({ fileName: "output_future_plan.pptx" }).then(() => console.log("done"));

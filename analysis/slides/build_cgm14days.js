@@ -235,6 +235,45 @@ function titleBlock(slide, kicker, title, dark) {
   addFooter(s, "n=14の記述的傾向。統計的検定ではなく参考情報として解釈。", false);
 }
 
+// ================= 8.5: なぜこの相関が起きたのか =================
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  titleBlock(s, "DISCUSSION", "なぜこの相関が起きたのか：仮説とエビデンス", false);
+
+  s.addShape("roundRect", { x: MARGIN, y: 1.55, w: W - MARGIN * 2, h: 1.2, rectRadius: 0.1, fill: { color: "FDF3E2" }, line: { color: "EDA100", width: 1 } });
+  s.addText("⚠ 最優先で疑うべき解釈：交絡（見せかけの相関）", {
+    x: MARGIN + 0.3, y: 1.68, w: W - MARGIN * 2 - 0.6, h: 0.3, fontFace: "Calibri", fontSize: 13, bold: true, color: "6B4B00", isTextBox: true, margin: 0
+  });
+  s.addText("DAY5以降、血糖変動の拡大とコンディション低下が同時進行。体調不良・疲労など共通の要因が両方を引き起こしているだけの可能性が高く、r=-0.41・-0.48程度の相関はこれだけで説明できる。", {
+    x: MARGIN + 0.3, y: 2.0, w: W - MARGIN * 2 - 0.6, h: 0.65, fontFace: "Calibri", fontSize: 11, color: "6B4B00", isTextBox: true, margin: 0
+  });
+
+  const cards = [
+    { n: "①", t: "睡眠の質への影響", d: "夜間の急な血糖変動が中途覚醒を誘発し、翌朝のコンディションを下げる可能性（CGM併用の睡眠研究で報告あり）", c: C_SOLID },
+    { n: "②", t: "自律神経系への負荷", d: "血糖を戻すためのホルモン動員（グルカゴン等）が交感神経を優位にし、夜間の回復を妨げる可能性。SCIでは自律神経調節自体も脆弱", c: C_SMOOTHIE },
+    { n: "③", t: "酸化ストレス", d: "平均血糖が同じでも変動幅が大きいほど酸化ストレスが増えることが糖尿病領域で報告されている（Monnierら）。慢性的な疲労感につながりうる経路", c: C_ONIGISMO },
+    { n: "④", t: "「爆発力」評価は間接指標の可能性", d: "瞬発力はATP-PCr系が主体で血糖に直接依存しにくい。血糖の安定＝生活リズムが整っている日、という間接的な心理指標である可能性が高い", c: C_LOWSUGAR },
+  ];
+  const cardW = (W - MARGIN * 2 - 0.3) / 2;
+  const cardH = 1.55;
+  cards.forEach((c, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = MARGIN + col * (cardW + 0.3);
+    const y = 2.95 + row * (cardH + 0.25);
+    s.addShape("roundRect", { x, y, w: cardW, h: cardH, rectRadius: 0.08, fill: { color: CARDBG }, line: { type: "none" } });
+    s.addShape("oval", { x: x + 0.22, y: y + 0.2, w: 0.36, h: 0.36, fill: { color: c.c }, line: { type: "none" } });
+    s.addText(c.n, { x: x + 0.22, y: y + 0.2, w: 0.36, h: 0.36, align: "center", valign: "middle", fontFace: "Cambria", fontSize: 12, bold: true, color: WHITE, isTextBox: true, margin: 0 });
+    s.addText(c.t, { x: x + 0.72, y: y + 0.18, w: cardW - 0.95, h: 0.34, fontFace: "Calibri", fontSize: 12.5, bold: true, color: NAVY, isTextBox: true, margin: 0 });
+    s.addText(c.d, { x: x + 0.22, y: y + 0.62, w: cardW - 0.45, h: 0.88, fontFace: "Calibri", fontSize: 10.5, color: MUTED, isTextBox: true, margin: 0 });
+  });
+
+  s.addShape("roundRect", { x: MARGIN, y: 6.5, w: W - MARGIN * 2, h: 0.8, rectRadius: 0.1, fill: { color: CARDBG }, line: { color: TEAL, width: 1 } });
+  s.addText("結論：本データはあくまで相関（n=14）であり、因果関係を示すエビデンスではない。検証にはDAY5要因の特定後、条件を統制した再検証が必要。", {
+    x: MARGIN + 0.3, y: 6.62, w: W - MARGIN * 2 - 0.6, h: 0.56, valign: "middle", fontFace: "Calibri", fontSize: 12, bold: true, color: NAVY, isTextBox: true, margin: 0
+  });
+}
+
 // ================= 9: まとめ・推奨アクション =================
 {
   const s = pres.addSlide();

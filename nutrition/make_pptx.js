@@ -1,21 +1,14 @@
-// 献立の栄養素充足率を、料理ごとにクリックで積み上げるアニメーション付き PowerPoint を作る。
+// 献立（menu.json）ごとに、栄養素充足率の積み上げグラフの PowerPoint を作る。
+// ・<献立>_animation.pptx : クリックで料理ごとに積み上がるアニメーション版
+// ・<献立>_steps_<年齢>.pptx : 料理を1品ずつ重ねた静止スライド版
 // 実行: NODE_PATH=<pptxgenjs を入れた node_modules> node make_pptx.js
 const pptxgen = require("pptxgenjs");
 const JSZip = require("jszip");
 const fs = require("fs");
 
-const NUTRIENTS = ["エネルギー", "たんぱく質", "脂質", "炭水化物", "カルシウム", "鉄",
-  "ビタミンA", "ビタミンB1", "ビタミンB2", "ビタミンC", "食物繊維"];
-
-// 料理ごとの栄養量（日本食品標準成分表 八訂より算出）
-const DISHES = [
-  ["ご飯", [234, 3.8, 0.5, 55.7, 5, 0.2, 0, 0.03, 0.02, 0, 2.3]],
-  ["豚の生姜焼き", [274, 16.8, 19.5, 7.5, 26, 0.6, 23, 0.58, 0.16, 23, 1.1]],
-  ["ほうれん草の胡麻和え", [54, 2.8, 3.0, 5.5, 102, 1.1, 270, 0.05, 0.09, 11, 2.8]],
-  ["じゃがいもの味噌汁", [56, 2.9, 0.7, 11.7, 22, 0.8, 0, 0.05, 0.04, 12, 4.5]],
-  ["オレンジ", [42, 1.0, 0.1, 9.8, 21, 0.3, 10, 0.10, 0.03, 40, 0.8]],
-  ["牛乳", [122, 6.6, 7.6, 9.6, 220, 0.0, 76, 0.08, 0.30, 2, 0]],
-];
+const MENU = JSON.parse(fs.readFileSync(__dirname + "/menu.json", "utf8"));
+const NUTRIENTS = MENU.nutrients;
+const MAX_DISHES = 6;
 
 // 日本人の食事摂取基準（2020年版）男性・身体活動レベルⅡ
 // 脂質・炭水化物は目標量（エネルギー比 20〜30%・50〜65%）の中央値をグラム換算
@@ -26,7 +19,6 @@ const AGES = [
   ["15〜17歳", std(2800, 65, 800, 10.0, 900, 1.5, 1.7, 100, 19)],
 ];
 
-const COLORS = ["2A78D6", "EB6834", "1BAF7A", "EDA100", "E87BA4", "008300"];
 const TEXT = "0B0B0B", MUTED = "52514E", GRID = "E4E3DF", LINE = "E34948";
 const FONT = "Yu Gothic";
 const Y_MAX = 100;
@@ -36,23 +28,31 @@ const CHART = { x: 0.3, y: 1.05, w: 9.7, h: 5.9 };
 const PLOT = { x: 0.1, y: 0.03, w: 0.84, h: 0.78 };
 
 // upto: 表示する料理の数（アニメーション版は全料理を置き、クリックで順に表示する）
-function addChartSlide(pres, ageLabel, s, upto = DISHES.length) {
+// dishes: [[料理名, {color, values}], ...]
+function addChartSlide(pres, menu, dishes, ageLabel, s, upto = dishes.length) {
   const slide = pres.addSlide();
   slide.background = { color: "FFFFFF" };
   slide.addText(`献立の栄養素充足率（思春期男性 ${ageLabel}）`, {
     x: 0.5, y: 0.3, w: 12.3, h: 0.7, fontFace: FONT, fontSize: 28, bold: true,
     color: TEXT, margin: 0, isTextBox: true,
   });
+  slide.addText(`主菜：${menu.main}`, {
+    x: 10.35, y: 0.4, w: 2.9, h: 0.5, fontFace: FONT, fontSize: 16, bold: true,
+    color: TEXT, margin: 0, valign: "middle", isTextBox: true,
+  });
 
   // まだ出ていない料理も 0 で系列に残し、料理ごとの色を固定する
-  const barData = DISHES.map(([name, vals], d) => ({
+  const barData = dishes.map(([name, { values }], d) => ({
     name, labels: NUTRIENTS,
-    values: vals.map((v, i) => (d < upto ? Math.round(v / s[i] * 1000) / 10 : 0)),
+    values: values.map((v, i) => (d < upto ? Math.round(v / s[i] * 1000) / 10 : 0)),
   }));
   slide.addChart([
     {
       type: pres.charts.BAR, data: barData,
-      options: { barDir: "col", barGrouping: "stacked", chartColors: COLORS, barGapWidthPct: 60 },
+      options: {
+        barDir: "col", barGrouping: "stacked", barGapWidthPct: 60,
+        chartColors: dishes.map(([, d]) => d.color), dataBorder: { pt: 1, color: "FFFFFF" },
+      },
     },
     {
       type: pres.charts.LINE,
@@ -84,9 +84,9 @@ function addChartSlide(pres, ageLabel, s, upto = DISHES.length) {
     x: 10.35, y: 1.25, w: 2.6, h: 0.4, fontFace: FONT, fontSize: 14, color: MUTED,
     margin: 0, isTextBox: true,
   });
-  DISHES.slice(0, upto).forEach(([name], i) => {
+  dishes.slice(0, upto).forEach(([name, { color }], i) => {
     slide.addText([
-      { text: "■ ", options: { color: COLORS[i] } },
+      { text: "■ ", options: { color } },
       { text: name, options: { color: TEXT } },
     ], {
       x: 10.35, y: 1.8 + i * 0.7, w: 2.9, h: 0.55, fontFace: FONT, fontSize: 16, bold: true,
@@ -105,17 +105,6 @@ function newPres() {
   pres.layout = "LAYOUT_WIDE";
   return pres;
 }
-
-// アニメーション版：年齢区分ごとに1枚
-const animPres = newPres();
-for (const [ageLabel, s] of AGES) addChartSlide(animPres, ageLabel, s);
-
-// 静止版：年齢区分ごとに1ファイル、料理を1品ずつ重ねた6枚
-const stepPres = AGES.map(([ageLabel, s]) => {
-  const pres = newPres();
-  for (let k = 1; k <= DISHES.length; k++) addChartSlide(pres, ageLabel, s, k);
-  return pres;
-});
 
 // ---- アニメーション（クリックごとに「料理名フェードイン＋系列ワイプ（下から）」）----
 let ctnId;
@@ -141,7 +130,7 @@ function step(trigger, effects) {
 function timingXml(chartId, dishIds) {
   ctnId = 3;
   // 目安線（最後の系列）はスライド表示と同時に出す
-  const steps = [step("0", [effect(tgtSeries(chartId, DISHES.length), "fade", "afterEffect", true)])];
+  const steps = [step("0", [effect(tgtSeries(chartId, dishIds.length), "fade", "afterEffect", true)])];
   dishIds.forEach((id, i) => {
     steps.push(step("indefinite", [
       effect(tgtShape(id), "fade", "clickEffect", true),
@@ -165,27 +154,40 @@ const idOf = (xml, name) => {
   return m[1];
 };
 
-(async () => {
-  const buf = await animPres.write({ outputType: "nodebuffer" });
-  const zip = await JSZip.loadAsync(buf);
-  for (let n = 1; n <= AGES.length; n++) {
-    const path = `ppt/slides/slide${n}.xml`;
-    let xml = await zip.file(path).async("string");
-    const chartId = idOf(xml, "Chart");
-    const dishIds = DISHES.map((_, i) => idOf(xml, `Dish${i}`));
-    const timing = timingXml(chartId, dishIds);
-    xml = xml.includes("</p:clrMapOvr>")
-      ? xml.replace("</p:clrMapOvr>", "</p:clrMapOvr>" + timing)
-      : xml.replace("</p:cSld>", "</p:cSld>" + timing);
-    zip.file(path, xml);
-  }
-  const out = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-  fs.writeFileSync(__dirname + "/nutrient_animation.pptx", out);
-  console.log("wrote nutrient_animation.pptx");
+const ageKey = (label) => label.replace("〜", "-").replace("歳", "");
 
-  for (const [n, pres] of stepPres.entries()) {
-    const file = `nutrient_steps_${AGES[n][0].replace("〜", "-").replace("歳", "")}.pptx`;
-    await pres.writeFile({ fileName: `${__dirname}/${file}` });
-    console.log(`wrote ${file}`);
+(async () => {
+  for (const [key, menu] of Object.entries(MENU.menus)) {
+    const dishes = menu.dishes.map((name) => [name, MENU.dishes[name]]);
+    if (dishes.length > MAX_DISHES) throw new Error(`${key}: 料理は${MAX_DISHES}品まで`);
+
+    // アニメーション版：年齢区分ごとに1枚
+    const animPres = newPres();
+    for (const [ageLabel, s] of AGES) addChartSlide(animPres, menu, dishes, ageLabel, s);
+    const zip = await JSZip.loadAsync(await animPres.write({ outputType: "nodebuffer" }));
+    for (let n = 1; n <= AGES.length; n++) {
+      const path = `ppt/slides/slide${n}.xml`;
+      let xml = await zip.file(path).async("string");
+      const chartId = idOf(xml, "Chart");
+      const dishIds = dishes.map((_, i) => idOf(xml, `Dish${i}`));
+      const timing = timingXml(chartId, dishIds);
+      xml = xml.includes("</p:clrMapOvr>")
+        ? xml.replace("</p:clrMapOvr>", "</p:clrMapOvr>" + timing)
+        : xml.replace("</p:cSld>", "</p:cSld>" + timing);
+      zip.file(path, xml);
+    }
+    const animFile = `${key}_animation.pptx`;
+    fs.writeFileSync(`${__dirname}/${animFile}`,
+      await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    console.log(`wrote ${animFile}`);
+
+    // 静止版：年齢区分ごとに1ファイル、料理を1品ずつ重ねたスライド
+    for (const [ageLabel, s] of AGES) {
+      const pres = newPres();
+      for (let k = 1; k <= dishes.length; k++) addChartSlide(pres, menu, dishes, ageLabel, s, k);
+      const file = `${key}_steps_${ageKey(ageLabel)}.pptx`;
+      await pres.writeFile({ fileName: `${__dirname}/${file}` });
+      console.log(`wrote ${file}`);
+    }
   }
 })();

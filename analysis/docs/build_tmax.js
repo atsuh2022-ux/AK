@@ -35,7 +35,7 @@ function cell(text, opts = {}) {
   });
 }
 
-const colW = [3200, 3200, 3200];
+const colW = [3000, 3000, 3000];
 const tableWidth = colW.reduce((a, b) => a + b, 0);
 
 const resultsTable = new Table({
